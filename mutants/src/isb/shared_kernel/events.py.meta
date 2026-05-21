@@ -1,0 +1,25 @@
+{
+    "exit_code_by_key": {
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1__init____mutmut_1": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1__init____mutmut_2": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1subscribe__mutmut_1": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1subscribe__mutmut_2": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1subscribe__mutmut_3": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_1": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_2": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_3": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_4": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_5": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_6": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_7": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_8": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_9": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_10": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_11": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_12": null,
+        "isb.shared_kernel.events.x\u01c1EventBus\u01c1publish__mutmut_13": null
+    },
+    "durations_by_key": {},
+    "type_check_error_by_key": {},
+    "estimated_durations_by_key": {}
+}

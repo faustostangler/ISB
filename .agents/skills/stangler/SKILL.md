@@ -50,10 +50,10 @@ Present before writing any functional code:
 ### Turn 2 — RED (Failing Tests Only)
 
 - **Pre-run check**: Run `uv run pytest` and `uv run mutmut run` to confirm the baseline test suite passes and has no unresolved survived mutants.
-- Write the **failing test file** based on the approved specification.
-- Create only a **logic stub** (empty class/function signatures with `raise NotImplementedError`).
-- **Execute `uv run pytest` to verify the tests fail (guaranteeing a clean Red state)**.
-- **Execute `uv run mutmut run` (targeting the stub module) to verify mutmut generates mutants and fails on the clean tests/forced fail run**.
+- **Step 2.1 — Skeleton Structure & In-File Walkthrough Commenting (Build-to-Learn)**: Before writing any tests, you MUST first create the target `src/` file structures, defining the modules, classes, and method signatures (using skeleton stubs that raise `NotImplementedError` or return placeholders). Spread detailed, step-by-step comments explaining the implementation logic throughout these files, positioned exactly where the real implementation code will be written after the testing phase. No functional code is allowed at this stage.
+- **Step 2.2 — Writing Failing Tests**: Write the failing test file based on the approved specification, targeting the stubbed classes and methods created in Step 2.1.
+- **Step 2.3 — Red State Verification**: Execute `uv run pytest` to verify the tests fail (guaranteeing a clean Red state).
+- **Step 2.4 — Mutation Baseline Check**: Execute `uv run mutmut run` (targeting the stub module) to verify mutmut generates mutants and fails on the clean tests/forced fail run.
 - Tests must be **pure and hermetic** — mock all external dependencies.
 - For bug fixes: write a **regression test reproducing the exact failure** first.
 - **Never write complex logic and tests simultaneously** (Anti-Mirroring rule).
@@ -99,11 +99,12 @@ See `references/project_layout.md` for the canonical directory structure.
 
 ### Comments & Documentation
 
-- **Code** answers "what" and "how" with lean engineering
-- **Comments** only answer "why" — always in Ubiquitous Language
-- **Structural docstrings**: Google Style, integrated with Pydantic/FastAPI/Swagger/OpenAPI
-- **Inline comments**: Reserved for ACL boundaries, infra limits, or exceptions
-- **TODOs**: Always linked to Issue Tracking or explained implementation plan
+- **Build-to-Learn Requirement**: Every single logical step and code block throughout the entire implementation MUST include explanatory comments. No logical steps may exist without comments.
+- **Code** answers "what" and "how" with clean engineering.
+- **Comments** explain the logic, intent, and "why" behind each block — always written in Ubiquitous Language.
+- **Structural docstrings**: Google Style, integrated with Pydantic/FastAPI/Swagger/OpenAPI.
+- **Inline comments**: Required for all logical blocks, ACL boundaries, infra limits, and exceptions.
+- **TODOs**: Always linked to Issue Tracking or explained implementation plan.
 
 ### Python Conventions
 
@@ -233,6 +234,7 @@ Before writing any code, mentally verify:
 - [ ] Is the Bounded Context identified?
 - [ ] Does the ADR exist for significant decisions?
 - [ ] Are domain terms in the Glossary?
+- [ ] Have I created the target `src/` skeleton structure with walkthrough comments (and no code) outlining the implementation logic before writing any tests?
 - [ ] Am I writing the test FIRST?
 - [ ] Is all I/O behind a Port/Adapter boundary?
 - [ ] Is config in `.env` with Pydantic validation?

@@ -3,7 +3,11 @@ from enum import Enum
 from dataclasses import dataclass
 
 class ProcessingStatus(str, Enum):
-    """Execution status for media processing pipeline items."""
+    """Execution status for media processing pipeline items.
+
+    Tracks the business lifecycle of a media episode through its lifecycle states:
+    PENDING -> EXTRACTING -> TRANSCRIBING -> SYNTHESIZING -> COMPLETED/FAILED.
+    """
     PENDING = "PENDING"
     EXTRACTING = "EXTRACTING"
     TRANSCRIBING = "TRANSCRIBING"
@@ -17,27 +21,62 @@ class ContentId:
     """Globally unique domain identifier for content units (MediaEpisode, RawNote, etc.).
 
     Decouples domain model from platform-specific IDs (e.g. YouTube video IDs)
-    by wrapping a standard UUIDv4.
+    by wrapping a standard UUIDv4. This prevents external system modifications or ID
+    formats from leaking into the core system domains.
     """
     value: uuid.UUID
 
     def __post_init__(self) -> None:
+        """Validate input type parameters post dataclass initialization.
+
+        Raises:
+            TypeError: If the input value is not an instance of uuid.UUID.
+        """
+        # Step 1: Enforce strict type validation
+        # We do this to ensure that only a valid UUID class can initialize ContentId,
+        # protecting domain objects from downstream parsing crashes.
         if not isinstance(self.value, uuid.UUID):
             raise TypeError("value must be a uuid.UUID instance")
 
     @classmethod
     def generate(cls) -> "ContentId":
-        """Generate a new random ContentId using UUIDv4."""
+        """Generate a new random ContentId using UUIDv4.
+
+        Returns:
+            ContentId: A new ContentId instance wrapping a randomly generated UUIDv4.
+        """
+        # Step 1: Instantiate ContentId wrapping a freshly generated UUIDv4
+        # We use UUIDv4 because it is statistically guaranteed to be unique globally.
         return cls(uuid.uuid4())
 
     @classmethod
     def from_str(cls, val: str) -> "ContentId":
-        """Construct a ContentId from a UUID string, raising ValueError if invalid."""
+        """Construct a ContentId from a UUID string representation.
+
+        Args:
+            val: The raw string representation of a UUID.
+
+        Returns:
+            ContentId: A constructed ContentId instance.
+
+        Raises:
+            ValueError: If the string is not a valid representation of a UUIDv4.
+        """
+        # Step 1: Attempt parsing the input string using standard uuid.UUID deserialization
         try:
             parsed = uuid.UUID(val)
+            # Step 2: Return a new ContentId wrapping the parsed UUID
             return cls(parsed)
         except (ValueError, AttributeError, TypeError) as err:
+            # Step 3: Wrap exceptions into a clear ValueError to protect caller domain layers
+            # from leakage of low-level uuid parsing errors.
             raise ValueError(f"Invalid UUID format: {val}") from err
 
     def __str__(self) -> str:
+        """Return the canonical string representation of the wrapped UUID.
+
+        Returns:
+            str: Standard 36-character hyphenated UUID string.
+        """
+        # Step 1: Stringify the internal UUID value for serialization / database writes
         return str(self.value)

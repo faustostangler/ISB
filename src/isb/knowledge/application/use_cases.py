@@ -9,7 +9,12 @@ from isb.knowledge.application.ports import LLMPort, VaultPort, KnowledgeManifes
 logger = logging.getLogger(__name__)
 
 class SynthesizeWikiUseCase:
-    """Orchestrates LLM synthesis of RawNote into the Obsidian Vault Wiki Layer."""
+    """Orchestrates LLM synthesis of RawNote into the Obsidian Vault Wiki Layer.
+
+    Loads existing vault knowledge, invokes a local LLM to generate structured summaries and
+    takeaways, updates existing wiki notes or creates new ones, establishes backlinks, and emits
+    synthesized knowledge events for audit tracking and sync triggers.
+    """
 
     def __init__(
         self,
@@ -18,40 +23,67 @@ class SynthesizeWikiUseCase:
         manifest_port: KnowledgeManifestPort,
         event_bus: EventBus
     ) -> None:
+        """Initialize use case dependencies via injection.
+
+        Args:
+            llm_port: Port adapter implementing LLMPort.
+            vault_port: Port adapter implementing VaultPort.
+            manifest_port: Port adapter implementing KnowledgeManifestPort.
+            event_bus: System EventBus instance.
+        """
+        # Step 1: Bind injected dependencies to local attributes
         self.llm = llm_port
         self.vault = vault_port
         self.manifest = manifest_port
         self.event_bus = event_bus
 
     def execute(self, raw_note: RawNote) -> list[WikiArticle]:
-        """Perform synthesis, updates or creates wiki articles, and publishes completed event."""
+        """Perform synthesis, updates or creates wiki articles, and publishes completed event.
+
+        Args:
+            raw_note: RawNote entity containing verbatim text and source details.
+
+        Returns:
+            list[WikiArticle]: List of created/updated WikiArticle entities.
+        """
         cid = raw_note.content_id
+        # Step 1: Log use case entry point
         logger.info("Synthesizing wiki articles for ContentId %s ('%s')", cid, raw_note.title)
+        
+        # Step 2: Transition progress status to SYNTHESIZING
         self.manifest.mark_status(cid, ProcessingStatus.SYNTHESIZING)
 
         try:
-            # 1. Load existing knowledge graphs
+            # Step 3: Load existing knowledge graphs
+            # We load existing wiki notes so the LLM synthesis can establish context,
+            # discover duplicate subjects, or update existing articles instead of duplicating files.
             existing_articles = self.vault.list_wiki_articles()
 
-            # 2. Invoke local LLM port using Pydantic structured output validation
+            # Step 4: Invoke local LLM port using Pydantic structured output validation
+            # Ensures LLM response exactly matches the required schema fields
             synthesized = self.llm.synthesize_wiki(raw_note, existing_articles)
 
-            # 3. Check for existing article in vault to update, or create a new one
+            # Step 5: Check for existing article in vault to update, or create a new one
+            # Prevents document duplication and merges related ideas into unified knowledge assets.
             existing_article = self.vault.find_wiki_article_by_title(synthesized.title)
             
             if existing_article:
+                # Scenario A: Article exists. We merge content and append references.
                 logger.info("Found existing WikiArticle '%s'. Merging content.", synthesized.title)
                 article = existing_article
                 article.content = synthesized.content
+                # Merge tags to avoid duplicates
                 article.tags = list(set(article.tags + synthesized.tags))
-                # Add backlinks
+                # Add backlinks formatted as Obsidian wiki-links [[Topic]]
                 new_backlinks = [f"[[{topic}]]" for topic in synthesized.related_topics]
                 article.backlinks = list(set(article.backlinks + new_backlinks))
-                # Link source note
+                # Append source note reference if not already tracked
                 if cid not in article.source_notes:
                     article.source_notes.append(cid)
+                # Update modification timestamp
                 article.last_updated = datetime.now(timezone.utc)
             else:
+                # Scenario B: Article is new. Instantiate a fresh WikiArticle entity.
                 logger.info("Creating new WikiArticle '%s'.", synthesized.title)
                 backlinks = [f"[[{topic}]]" for topic in synthesized.related_topics]
                 article = WikiArticle(
@@ -64,14 +96,15 @@ class SynthesizeWikiUseCase:
                     last_updated=datetime.now(timezone.utc)
                 )
 
-            # 4. Save to Obsidian Vault repository
+            # Step 6: Save files to physical vault storage folders via VaultPort
             wiki_path = self.vault.save_wiki_article(article)
-            raw_path = self.vault.save_raw_note(raw_note) # Ensure raw path is resolved
+            raw_path = self.vault.save_raw_note(raw_note)
 
-            # 5. Finalize processing status in SQLite manifest registry
+            # Step 7: Finalize processing status to COMPLETED in database manifest registry
             self.manifest.mark_status(cid, ProcessingStatus.COMPLETED)
 
-            # 6. Publish domain event
+            # Step 8: Construct and publish KnowledgeSynthesized domain event
+            # Signals execution completions to tracking telemetry or external dashboards.
             event = KnowledgeSynthesized(
                 content_id=cid,
                 raw_note_path=raw_path,
@@ -80,16 +113,23 @@ class SynthesizeWikiUseCase:
             self.event_bus.publish(event)
             logger.info("Completed synthesis for ContentId %s.", cid)
             
+            # Step 9: Return list of modified articles
             return [article]
 
         except Exception as err:
+            # Step 10: Fail-fast exception safety block
+            # Transition processing status back to FAILED to allow workflow retries.
             logger.exception("Failed synthesis for ContentId %s.", cid)
             self.manifest.mark_status(cid, ProcessingStatus.FAILED)
             raise
 
 
 class ProcessTranscriptUseCase:
-    """Saves raw transcript and triggers the synthesis use case (Obsidian pipeline entrypoint)."""
+    """Saves raw transcript and triggers the synthesis use case (Obsidian pipeline entrypoint).
+
+    Accepts completed Whisper transcripts, instantiates the RawNote domain entity,
+    saves it to the vault raw directories, and executes the synthesis workflow.
+    """
 
     def __init__(
         self,
@@ -97,6 +137,14 @@ class ProcessTranscriptUseCase:
         manifest_port: KnowledgeManifestPort,
         synthesize_use_case: SynthesizeWikiUseCase
     ) -> None:
+        """Initialize dependencies via injection.
+
+        Args:
+            vault_port: Port adapter implementing VaultPort.
+            manifest_port: Port adapter implementing KnowledgeManifestPort.
+            synthesize_use_case: Injected SynthesizeWikiUseCase instance.
+        """
+        # Step 1: Bind injected dependencies to local attributes
         self.vault = vault_port
         self.manifest = manifest_port
         self.synthesize_use_case = synthesize_use_case
@@ -108,9 +156,21 @@ class ProcessTranscriptUseCase:
         transcript_text: str,
         metadata: NoteMetadata
     ) -> RawNote:
-        """Process completed transcript: construct RawNote, write to vault, and call SynthesizeWikiUseCase."""
+        """Process completed transcript: construct RawNote, write to vault, and call SynthesizeWikiUseCase.
+
+        Args:
+            content_id: System ContentId identifier.
+            title: Descriptive title for the raw transcript.
+            transcript_text: Verbatim string transcript content.
+            metadata: NoteMetadata frontmatter parameters.
+
+        Returns:
+            RawNote: The persisted RawNote entity.
+        """
+        # Step 1: Log transcript processing start event
         logger.info("Processing completed transcript for ContentId %s ('%s')", content_id, title)
         
+        # Step 2: Instantiate the RawNote domain entity
         raw_note = RawNote(
             content_id=content_id,
             title=title,
@@ -118,10 +178,11 @@ class ProcessTranscriptUseCase:
             metadata=metadata
         )
         
-        # Save verbatim note to 00-Raw/ folder
+        # Step 3: Write verbatim raw transcript to 00-Raw/ folder in Obsidian Vault
         self.vault.save_raw_note(raw_note)
 
-        # Trigger second brain compilation
+        # Step 4: Execute second brain synthesis pipeline
         self.synthesize_use_case.execute(raw_note)
         
+        # Step 5: Return raw note entity
         return raw_note
