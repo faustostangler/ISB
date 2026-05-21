@@ -67,6 +67,26 @@ def test_event_bus_multiple_subscribers() -> None:
     )
     
     bus.publish(event)
-    
     assert calls["h1"] == 1
     assert calls["h2"] == 1
+
+def test_event_bus_polymorphic_subscribers() -> None:
+    """Test that handlers subscribed to base class receive subclass events."""
+    from isb.shared_kernel.events import DomainEvent
+    bus = EventBus()
+    received = []
+    
+    # Subscribe to base class
+    bus.subscribe(DomainEvent, lambda e: received.append(e))
+    
+    # Publish subclass event
+    event = AudioExtracted(
+        content_id=ContentId.generate(),
+        audio_path=Path("/tmp/audio.wav"),
+        metadata={}
+    )
+    bus.publish(event)
+    
+    assert len(received) == 1
+    assert received[0] == event
+

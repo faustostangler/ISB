@@ -121,9 +121,10 @@ Code must be thoroughly refactored to include proper type hints, Google Style st
 Inline comments are reserved exclusively to answer "why", document Anti-Corruption Layers (ACL), note infra limits, or explain exceptions.
 4. Execution Protocol: The Stangler Method
 All implementation work strictly follows a three-turn dialectical cycle.
-Turn 1 (Plan): Present the architecture plan, ADR draft, and test strategy.
-Turn 2 (Red): Write ONLY the failing test file and a logic stub.
-Turn 3 (Green + Refactor): Write the minimum viable logic, refactor, and run mutation checks to confirm 0 survivors.
+- **Precondition**: Always run `uv run pytest` and `uv run mutmut run` and resolve all existing test failures and survived mutants in target modules before any new implementation starts.
+- Turn 1 (Plan): Present the architecture plan, ADR draft, and test strategy.
+- Turn 2 (Red): Run tests/mutmut baseline, write ONLY the failing test file and a logic stub, verify the tests fail, and verify mutmut catches the stub failure.
+- Turn 3 (Green + Refactor): Write the minimum viable logic, refactor, run pytest and mutmut, and resolve all survived mutants and failing tests before declaring the implementation complete.
 Writing complex logic and tests simultaneously (Anti-Mirroring) is strictly forbidden.
 5. Defensive Engineering & Strict Rules
 Import Hygiene: NEVER use src. prefixes in imports within src/.

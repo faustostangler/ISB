@@ -31,6 +31,10 @@ The human acts as the **Lead Architect**; you act as the **High-Performance Impl
 
 Every implementation task follows this strict sequence. Never skip turns.
 
+> [!IMPORTANT]
+> **Mandatory Rule: Test & Mutation-First Precondition**
+> You MUST always run `uv run pytest` and `uv run mutmut run` to ensure all existing tests pass and 0 mutants survive in the target modules BEFORE starting any new real/production code implementation. Any test failures or survived mutants must be completely resolved as part of the testing phase before writing the actual functional logic.
+
 ### Turn 1 — PLAN (Architecture & ADR)
 
 Present before writing any functional code:
@@ -45,18 +49,23 @@ Present before writing any functional code:
 
 ### Turn 2 — RED (Failing Tests Only)
 
-- Write the **failing test file** based on the approved specification
-- Create only a **logic stub** (empty class/function signatures with `raise NotImplementedError`)
-- Tests must be **pure and hermetic** — mock all external dependencies
-- For bug fixes: write a **regression test reproducing the exact failure** first
-- **Never write complex logic and tests simultaneously** (Anti-Mirroring rule)
+- **Pre-run check**: Run `uv run pytest` and `uv run mutmut run` to confirm the baseline test suite passes and has no unresolved survived mutants.
+- Write the **failing test file** based on the approved specification.
+- Create only a **logic stub** (empty class/function signatures with `raise NotImplementedError`).
+- **Execute `uv run pytest` to verify the tests fail (guaranteeing a clean Red state)**.
+- **Execute `uv run mutmut run` (targeting the stub module) to verify mutmut generates mutants and fails on the clean tests/forced fail run**.
+- Tests must be **pure and hermetic** — mock all external dependencies.
+- For bug fixes: write a **regression test reproducing the exact failure** first.
+- **Never write complex logic and tests simultaneously** (Anti-Mirroring rule).
 
 ### Turn 3 — GREEN + REFACTOR
 
-- Implement the **minimum code** to make all tests pass (Green)
-- **Refactor** to Clean Architecture standards (typing, patterns, docstrings)
-- Run mutation checks — **0 mutants must survive** in core domain logic (see `references/mutmut_guide.md`)
-- Validate with linters (`ruff`) and type checkers (`mypy`) before declaring done
+- Implement the **minimum code** to make all tests pass (Green).
+- **Execute `uv run pytest` to ensure all tests are green**.
+- **Refactor** to Clean Architecture standards (typing, patterns, docstrings).
+- **Execute `uv run mutmut run` and verify results — 0 mutants must survive in core domain and application logic** (see `references/mutmut_guide.md`).
+- **Resolve all survived mutants and failing tests** as part of the testing cycle BEFORE the implementation is considered complete or any subsequent real implementation begins.
+- Validate with linters (`ruff`) and type checkers (`mypy`) before declaring done.
 
 ---
 
@@ -220,6 +229,7 @@ Read only the specific file you need — never load the entire corpus.
 
 Before writing any code, mentally verify:
 
+- [ ] Have I run `pytest` and `mutmut` to ensure all existing tests pass and 0 mutants survive before starting?
 - [ ] Is the Bounded Context identified?
 - [ ] Does the ADR exist for significant decisions?
 - [ ] Are domain terms in the Glossary?
@@ -229,4 +239,4 @@ Before writing any code, mentally verify:
 - [ ] Are docstrings Google Style and Swagger-ready?
 - [ ] Will this be observable in production (metrics, logs, traces)?
 - [ ] Is the Dockerfile still a single source of truth?
-- [ ] Does this pass `ruff`, `mypy`, and `mutmut`?
+- [ ] Does this pass `ruff`, `mypy`, and `mutmut` (with 0 survived mutants resolved)?
