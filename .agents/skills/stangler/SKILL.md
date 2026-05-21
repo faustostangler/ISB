@@ -32,7 +32,9 @@ The human acts as the **Lead Architect**; you act as the **High-Performance Impl
 Every implementation task follows this strict sequence. Never skip turns.
 
 ### Turn 1 — PLAN (Architecture & ADR)
+
 Present before writing any functional code:
+
 - **Bounded Context** identification and domain model
 - **ADR draft** in `docs/adr/` — use template from `references/adr_template.md`
 - **Ubiquitous Language** definitions → `docs/GLOSSARY.md`
@@ -42,6 +44,7 @@ Present before writing any functional code:
 **Wait for explicit "APPROVED" before proceeding.** No code without approval.
 
 ### Turn 2 — RED (Failing Tests Only)
+
 - Write the **failing test file** based on the approved specification
 - Create only a **logic stub** (empty class/function signatures with `raise NotImplementedError`)
 - Tests must be **pure and hermetic** — mock all external dependencies
@@ -49,6 +52,7 @@ Present before writing any functional code:
 - **Never write complex logic and tests simultaneously** (Anti-Mirroring rule)
 
 ### Turn 3 — GREEN + REFACTOR
+
 - Implement the **minimum code** to make all tests pass (Green)
 - **Refactor** to Clean Architecture standards (typing, patterns, docstrings)
 - Run mutation checks — **0 mutants must survive** in core domain logic (see `references/mutmut_guide.md`)
@@ -72,6 +76,7 @@ See `references/project_layout.md` for the canonical directory structure.
 | **Presentation** | FastAPI / Streamlit / CLI | Thin rendering via Humble Object Pattern |
 
 ### Key Patterns
+
 - **Ports & Adapters**: Every external dependency accessed through an ABC Port
 - **Dependency Injection**: Wire adapters at composition root, never in domain
 - **Shared Kernel**: Cross-context shared types via explicit kernel module
@@ -84,6 +89,7 @@ See `references/project_layout.md` for the canonical directory structure.
 ## 3. Code Standards
 
 ### Comments & Documentation
+
 - **Code** answers "what" and "how" with lean engineering
 - **Comments** only answer "why" — always in Ubiquitous Language
 - **Structural docstrings**: Google Style, integrated with Pydantic/FastAPI/Swagger/OpenAPI
@@ -91,6 +97,7 @@ See `references/project_layout.md` for the canonical directory structure.
 - **TODOs**: Always linked to Issue Tracking or explained implementation plan
 
 ### Python Conventions
+
 - **Type hints**: Rigorous on all function signatures and class attributes
 - **Import hygiene**: NEVER use `src.` prefixes in imports within `src/`
 - **Pydantic V2**: All data models use strong typing and validation
@@ -98,11 +105,13 @@ See `references/project_layout.md` for the canonical directory structure.
 - **MyPy**: Strict type checking enabled
 
 ### Configuration
+
 - Centralize ALL config in `.env` files
 - Validate with `pydantic-settings` in a single `config.py` class
 - **Fail-fast principle**: Invalid config crashes at startup, not at runtime
 
 ### Defensive Engineering
+
 - **Name-Based Fallback**: Infrastructure Translators must handle dynamic mismatches
 - **Graceful Degradation**: Handle infra failures (Redis down, corrupted Parquet) without crashing
 - **Data Caching**: Use PyArrow IPC (Feather), never `pickle` for DataFrame serialization
@@ -139,6 +148,7 @@ Tests mirror `src/` structure in `tests/` directory. Every module has its test c
 ## 6. Observability & SRE
 
 ### Prometheus Golden Signals
+
 | Signal | What it measures |
 |--------|-----------------|
 | **Latency** | Response times (p50, p95, p99) |
@@ -147,10 +157,12 @@ Tests mirror `src/` structure in `tests/` directory. Every module has its test c
 | **Saturation** | CPU/memory utilization |
 
 ### Domain Metrics (Ubiquitous Language)
+
 Track business success: **Data Quality**, **Business Lifecycle**,
 **Integration/Ingestion Efficiency**, **Insight Metrics**.
 
 ### Stack
+
 - **Prometheus + Grafana**: Metrics collection + dashboards
 - **Grafana Loki**: Log aggregation for Kubernetes
 - **Sentry**: Error tracking with GIT_SHA tagging, PII/SQL redaction (LGPD)
@@ -158,6 +170,7 @@ Track business success: **Data Quality**, **Business Lifecycle**,
 - **DORA Metrics**: Deployment frequency, lead time, change failure rate, MTTR
 
 ### Culture
+
 - SRE principles separate business metrics from hardware reliability
 - Every critical failure → documented **Blameless Post-Mortem**
 - Lean culture of sharing and transparency
@@ -179,6 +192,7 @@ Track business success: **Data Quality**, **Business Lifecycle**,
 All reference files are co-located in this skill's `references/` directory.
 
 ### Quick-Access References
+
 | File | Use When |
 |------|----------|
 | `references/adr_template.md` | Starting Turn 1 — ADR drafting |
@@ -187,9 +201,11 @@ All reference files are co-located in this skill's `references/` directory.
 | `references/domain_index.md` | Need deep technical knowledge on any of 13 domains |
 
 ### Domain Index (37 files, ~13MB)
+
 Read `references/domain_index.md` to find the right file for the topic.
 
 **When to consult the domain corpus:**
+
 - Designing infrastructure or choosing between container strategies
 - Implementing ML pipelines, deep learning architectures, or LLM systems
 - Setting up observability, security hardening, or cloud deployments

@@ -1,0 +1,23 @@
+# ISB Ingestion Sources Configuration
+# Edit this file to list channels, playlists, or individual video links.
+
+sources:
+  - id: karpathy-channel
+    name: "Andrej Karpathy"
+    url: "https://www.youtube.com/@AndrejKarpathy"
+    type: "channel"
+    category: "AI"
+    tags:
+      - deep-learning
+      - programming
+      - llm
+
+  - id: custom-playlist-1
+    name: "Obsidian Second Brain Setup Guides"
+    url: "https://www.youtube.com/playlist?list=PL3aG173sP7vP_l7B8Wj-aB4N5Zqg7kR"
+    type: "playlist"
+    category: "Productivity"
+    tags:
+      - second-brain
+      - obsidian
+      - productivity

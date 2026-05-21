@@ -1,0 +1,32 @@
+{
+    "exit_code_by_key": {
+        "isb.main.x_main__mutmut_1": 33,
+        "isb.main.x_main__mutmut_2": 33,
+        "isb.main.x_main__mutmut_3": 33,
+        "isb.main.x_main__mutmut_4": 33,
+        "isb.main.x_main__mutmut_5": 33,
+        "isb.main.x_main__mutmut_6": 33,
+        "isb.main.x_main__mutmut_7": 33,
+        "isb.main.x_main__mutmut_8": 33,
+        "isb.main.x_main__mutmut_9": 33,
+        "isb.main.x_main__mutmut_10": 33,
+        "isb.main.x_main__mutmut_11": 33,
+        "isb.main.x_main__mutmut_12": 33
+    },
+    "durations_by_key": {},
+    "type_check_error_by_key": {},
+    "estimated_durations_by_key": {
+        "isb.main.x_main__mutmut_1": 0,
+        "isb.main.x_main__mutmut_2": 0,
+        "isb.main.x_main__mutmut_3": 0,
+        "isb.main.x_main__mutmut_4": 0,
+        "isb.main.x_main__mutmut_5": 0,
+        "isb.main.x_main__mutmut_6": 0,
+        "isb.main.x_main__mutmut_7": 0,
+        "isb.main.x_main__mutmut_8": 0,
+        "isb.main.x_main__mutmut_9": 0,
+        "isb.main.x_main__mutmut_10": 0,
+        "isb.main.x_main__mutmut_11": 0,
+        "isb.main.x_main__mutmut_12": 0
+    }
+}
