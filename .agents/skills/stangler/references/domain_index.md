@@ -12,6 +12,9 @@ Path: `.agents/skills/stangler/references/`
 | `adr_template.md` | ADR template for Turn 1 planning |
 | `project_layout.md` | Standard Hexagonal project directory structure |
 | `mutmut_guide.md` | How to run and interpret mutation testing results |
+| `adr_lifecycle_guide.md` | Governance, state transitions, and resolution of impasses |
+| `legacy_strangling_patterns.md` | Anti-Corruption Layer (ACL) isolation patterns for non-conformant code |
+| `zero_downtime_migrations.md` | Unifying schema evolution with the ADR lifecycle using Expand-Contract patterns |
 
 ---
 
