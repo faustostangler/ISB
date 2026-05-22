@@ -2,15 +2,15 @@
 name: doctor-stangler
 description: >
   Enforces the Doctor Stangler Architecture Method — the mandatory coding methodology for this workspace.
-  Coordinates the multi-agent committee: stangler-angiography, stangler-stereoscopy,
-  stangler-refractometry, stangler-surgery, and stangler-treatment.
+  Coordinates the multi-agent committee via its sub-skills located under agents/:
+  angiography, stereoscopy, refractometry, surgery, and treatment.
   ADR-first: every coding task begins with an Architectural Decision Record. Specs are
   consequences of the ADR. Implementation plans are consequences of specs. No implementation
   plan without specs. No specs without ADR. Governs architecture (DDD, Hexagonal/Clean
   Architecture, Modular Monolith), execution protocol (ADR → Specs → TDD Red-Green-Refactor
   → Implementation), code standards (Python typing, Pydantic, docstrings, config validation),
   infrastructure patterns (Docker, IaC, 12-Factor, GitOps), and observability (Prometheus,
-  Grafana, Sentry). Also serves as a reference lookup into 37 deep-dive technical documents
+  Grafana, Sentry, Langfuse). Also serves as a reference lookup into 37 deep-dive technical documents
   covering Computing, Programming, Databases, Containers, ML, Deep Learning, Frameworks,
   MLOps/LLMOps, AI/LLM Architecture, Automation, Security, Observability, and Cloud/Hardware.
   This skill activates on EVERY coding task by default — architecture design, code review,
@@ -37,11 +37,11 @@ To ensure absolute precision, the Doctor Stangler Method is executed by a commit
 
 | Phase | Agent Role | Folder / Skill | Trigger/Focus |
 |-------|------------|----------------|---------------|
-| **Phase 0** | **Angiography** | `stangler-angiography` | Code archaeology, reverse-engineering (`reversa`), mapping legacy systems |
-| **Phase 1** | **Stereoscopy** | `stangler-stereoscopy` | Strategic vision, writing ADRs, glossary creation, cross-context state |
-| **Phase 2** | **Refractometry** | `stangler-refractometry` | Precision test specifications, boundary conditions, invariant tests |
-| **Phase 3** | **Surgery** | `stangler-surgery` | Surgical TDD implementation, failing tests, minimum code to pass, refactoring |
-| **Phase 4** | **Treatment** | `stangler-treatment` | Post-op quality checks, mutation testing (`mutmut`), static types, linting |
+| **Phase 0** | **Angiography** | `agents/angiography.md` | Code archaeology, reverse-engineering (`reversa`), mapping legacy systems |
+| **Phase 1** | **Stereoscopy** | `agents/stereoscopy.md` | Strategic vision, writing ADRs, glossary creation, cross-context state |
+| **Phase 2** | **Refractometry** | `agents/refractometry.md` | Precision test specifications, boundary conditions, invariant tests |
+| **Phase 3** | **Surgery** | `agents/surgery.md` | Surgical TDD implementation, failing tests, minimum code to pass, refactoring |
+| **Phase 4** | **Treatment** | `agents/treatment.md` | Post-op quality checks, mutation testing (`mutmut`), static types, linting |
 
 ---
 
@@ -130,8 +130,8 @@ Before proceeding past the ADR phase, verify the following compliance checks
 - [ ] Domain model uses Value Objects — no Primitive Obsession (see §3)
 - [ ] Entities enforce invariants at instantiation — no invalid state possible (see §3)
 - [ ] Domain models are separate from persistence models — no ORM in Domain (see §3)
-- [ ] Test strategy defined (boundary conditions, mocks, integration points)
-- [ ] Observability plan included (metrics, logs, traces)
+- [ ] Test strategy defined (boundary conditions, mocks, integration points, LLM Evals)
+- [ ] Observability plan included (metrics, logs, traces, Langfuse)
 - [ ] LGPD/Security implications assessed
 - [ ] Ubiquitous Language terms added to `docs/GLOSSARY.md`
 - [ ] Alternatives considered and rejection rationale documented
@@ -139,6 +139,21 @@ Before proceeding past the ADR phase, verify the following compliance checks
   Cross-Context State Strategy section is present and complete (see below)
 - [ ] **Boundary Violations**: No module reads/writes directly to another module's
   persistence — if detected, the ADR must be **rejected immediately**
+- [ ] **LLM ADRs (mandatory)**: If this ADR involves any LLM interaction block, the
+  **Langfuse Ingestion Strategy** section must be present and complete, defining:
+  - Trace taxonomy: `trace_id`, `session_id`, `user_id`, and contextual tag schema.
+  - Span hierarchy: which steps are wrapped as Langfuse generations/spans.
+  - Prompt version tracking: `prompt_name` + `prompt_version` registered in Langfuse.
+  - Score schema: which Eval rubrics (`faithfulness`, `relevance`, `hallucination`,
+    `toxicity`) are computed and at what threshold they block the pipeline.
+  - ADRs **without** an explicit Langfuse Ingestion Strategy are **rejected** when they
+    involve generative AI workflows.
+- [ ] **Evals (mandatory for any ADR with an AI/LLM decision)**: The **Eval Matrix**
+  must be designed before coding begins, specifying for each output dimension:
+  - Evaluation method (LLM-as-judge, embedding similarity, regex, rule-based).
+  - Threshold score (numeric, e.g. `faithfulness ≥ 0.80`).
+  - Dataset source (golden dataset path or Langfuse dataset name).
+  - Blocking policy (pipeline breaks on failure, or logged as warning).
 
 **Wait for explicit "APPROVED" from the Lead Architect before proceeding to Specs.**
 
@@ -621,6 +636,7 @@ When a cross-context workflow requires compensation on failure:
 |-------|------|---------|
 | Unit | `[TEST_EXEC]` | Domain logic, pure functions |
 | Mutation | `[MUTATION_EXEC]` | Verify test suite kills all mutants in core domain (or strict coverage targets) |
+| **LLM Evals** | **Langfuse Evals / `[EVAL_EXEC]`** | Frozen assertion boundaries for non-deterministic LLM outputs (faithfulness, relevance, hallucination, toxicity) |
 | Contract | `pact-python` | Consumer-Driven Contracts between services |
 | API Fuzzing | `schemathesis` | Property-based testing against OpenAPI specs |
 | E2E | `pytest-playwright` | Browser-based integration tests |
@@ -672,6 +688,10 @@ Track business success: **Data Quality**, **Business Lifecycle**,
 - **Prometheus + Grafana**: Metrics collection + dashboards
 - **Grafana Loki**: Log aggregation for Kubernetes
 - **Sentry**: Error tracking with GIT_SHA tagging, PII/SQL redaction (LGPD)
+- **Langfuse**: LLM application observability — trace every generative call with `trace_id`,
+  `session_id`, `user_id`; version prompts; score outputs with automated Evals
+  (faithfulness, relevance, hallucination, toxicity). Acts as the clinical telemetry
+  instrument for all AI pipelines.
 - **UptimeRobot**: External availability heartbeats
 - **DORA Metrics**: Deployment frequency, lead time, change failure rate, MTTR
 
@@ -755,6 +775,8 @@ Before writing any code, mentally verify:
 - [ ] **Cross-Context**: Is the Transactional Outbox Pattern specified for event delivery?
 - [ ] **ADR Lifecycle**: Is the ADR state correctly declared in the metadata (e.g., Proposed, Accepted, Superceded, Deprecated)?
 - [ ] **ADR Lifecycle**: If this ADR supercedes an existing one, is the link to the prior ADR explicit, reciprocal, and updated on disk?
+- [ ] **LLM/AI ADRs**: If this ADR involves an LLM interaction, is the Langfuse Ingestion Strategy section present (trace taxonomy, span hierarchy, prompt versioning, score schema)?
+- [ ] **LLM/AI ADRs**: Is the Eval Matrix designed and written to `docs/specs/` BEFORE coding begins (method, threshold, dataset, blocking policy per dimension)?
 - [ ] Has the Lead Architect explicitly approved the ADR?
 - [ ] Is the ADR artifact frozen and written to disk?
 
@@ -764,6 +786,8 @@ Before writing any code, mentally verify:
 - [ ] Are boundary conditions and edge cases identified?
 - [ ] Are Entity invariant construction tests included?
 - [ ] Is the test strategy classified (unit/integration/contract/E2E)?
+- [ ] **LLM Evals**: For any LLM output path, are Eval Rubrics written to `docs/specs/EVAL-NNN-*.md` with frozen numeric thresholds (e.g. `faithfulness ≥ 0.80`, `hallucination ≤ 0.10`)?
+- [ ] **LLM Evals**: Do the Eval Rubrics map each ADR goal to a measurable Langfuse score dimension?
 - [ ] Has the Lead Architect explicitly approved the specs?
 - [ ] Is the Specs artifact frozen and written to disk?
 
@@ -781,6 +805,10 @@ Before writing any code, mentally verify:
 - [ ] Are docstrings Google Style and Swagger-ready?
 - [ ] Are type hints strict — no `Any`, no raw primitives for domain concepts?
 - [ ] Will this be observable in production (metrics, logs, traces)?
+- [ ] **LLM Adapters**: Is every LLM adapter in `infrastructure/` wrapped with the Langfuse SDK client (generation/span decorators)?
+- [ ] **LLM Adapters**: Are `trace_id`, `session_id`, `user_id`, and contextual tags bound to the Langfuse trace lifecycle before the call completes?
+- [ ] **LLM Adapters**: Is the prompt name and version registered in Langfuse before being sent to the model?
+- [ ] **LLM Evals**: Is the execution metadata required for Eval computation (prompt, response, latency, token count) logged to Langfuse as structured span data?
 - [ ] Is the Dockerfile still a single source of truth?
 - [ ] **Legacy Strangling**: If interacting with non-conformant/legacy code, is it strictly isolated behind an Anti-Corruption Layer (ACL) adapter?
 - [ ] **Legacy Strangling**: Are all types translated at the ACL boundary, preventing primitive/external leaks into the Domain?

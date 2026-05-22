@@ -20,10 +20,10 @@ Every significant architectural decision begins with an **Architectural Decision
 Before drafting the ADR:
 1. **Predecessor Artifact**: Read the legacy discovery notes (`docs/legacy_discovery/DISCO-NNN-*.md`) from disk if the task intersects with legacy code.
 2. **Methodology Corpus**: You MUST read the following artifacts from the shared `references` directory:
-   - [adr_template.md](../stangler/references/adr_template.md) (for compliance check verification)
-   - [adr_lifecycle_guide.md](../stangler/references/adr_lifecycle_guide.md) (for state definitions and emergency retrospective formats)
-   - [legacy_strangling_patterns.md](../stangler/references/legacy_strangling_patterns.md) (if wrapping legacy code with ACLs)
-   - [zero_downtime_migrations.md](../stangler/references/zero_downtime_migrations.md) (if evolving DB schemas)
+   - [adr_template.md](../references/adr_template.md) (for compliance check verification)
+   - [adr_lifecycle_guide.md](../references/adr_lifecycle_guide.md) (for state definitions and emergency retrospective formats)
+   - [legacy_strangling_patterns.md](../references/legacy_strangling_patterns.md) (if wrapping legacy code with ACLs)
+   - [zero_downtime_migrations.md](../references/zero_downtime_migrations.md) (if evolving DB schemas)
 
 ---
 
@@ -42,7 +42,45 @@ The drafted ADR must reside under `docs/adr/ADR-NNN-short-title.md` and present:
    - **Failure Modes & Compensation (Saga)**: Define compensation events, Saga style (Choreography or Orchestration), maximum delay (SLA), and idempotency keys.
    - **Transactional Outbox Pattern**: Specify for multi-context event delivery.
 
-Once approved by the Lead Architect, this ADR is **frozen** and becomes the immutable input for Phase 2.
+---
+
+## 2.1 LLM/AI ADR Compliance: Langfuse Ingestion Strategy (Mandatory Gate)
+
+> [!CAUTION]
+> **Any ADR that introduces or modifies an LLM interaction block MUST include a `Langfuse Ingestion Strategy` section. ADRs without it are REJECTED.**
+
+When the decision involves generative AI calls (LLM, embedding, reranking, multimodal), include this section in the ADR:
+
+### Langfuse Ingestion Strategy
+
+Describe the **clinical telemetry plan** for every generative pipeline step:
+
+1. **Trace Taxonomy**: Define the `trace_id` strategy (e.g., `content_id`-derived), `session_id` (e.g., pipeline run ID), `user_id` (operator or source channel ID), and contextual tag schema (`model`, `pipeline_step`, `context_type`).
+2. **Span Hierarchy**: List which steps are wrapped as Langfuse `generation` spans (LLM calls) and which are `span` objects (pre/post-processing, retrieval, structured extraction).
+3. **Prompt Version Tracking**: Every prompt must be registered in Langfuse with a `prompt_name` and `prompt_version`. No hardcoded strings reaching the model without versioning.
+4. **Score Schema & Blocking Thresholds**: Define which Eval dimensions are computed, by which method, and at which threshold the pipeline is **blocked** vs. **warned**:
+
+   | Dimension | Method | Threshold | Blocking? |
+   |-----------|--------|-----------|-----------|
+   | `faithfulness` | LLM-as-judge | ≥ 0.80 | Yes |
+   | `relevance` | embedding similarity | ≥ 0.75 | Yes |
+   | `hallucination` | LLM-as-judge | ≤ 0.10 | Yes |
+   | `toxicity` | rule-based / classifier | ≤ 0.05 | Yes |
+
+---
+
+## 2.2 Eval Matrix (Mandatory for AI/LLM ADRs — Before Coding)
+
+> [!IMPORTANT]
+> The **Eval Matrix must be designed and frozen in `docs/specs/EVAL-NNN-short-title.md` BEFORE any implementation coding begins**. This is a blocking gate.
+
+For each output dimension of the LLM-influenced pipeline step, specify:
+
+- **Objective** (what ADR goal does this dimension test?)
+- **Evaluation method** (LLM-as-judge, embedding cosine similarity, regex, rule-based)
+- **Numeric threshold** (e.g. `faithfulness ≥ 0.80`)
+- **Golden dataset** (path to `tests/evals/datasets/EVAL-NNN.jsonl` or Langfuse dataset name)
+- **Blocking policy** (pipeline `FAILED` state on score below threshold, or `WARNING` log only)
 
 ---
 
@@ -59,4 +97,8 @@ Once approved by the Lead Architect, this ADR is **frozen** and becomes the immu
 - [ ] Is the consistency model declared (Eventual vs Strong)?
 - [ ] Are Saga compensation events, SLA delay, and idempotency keys documented?
 - [ ] Is the Transactional Outbox Pattern specified for event delivery?
+- [ ] **LLM/AI ADRs**: Does this ADR introduce an LLM interaction? If yes:
+  - [ ] Is the Langfuse Ingestion Strategy section present with trace taxonomy, span hierarchy, prompt versioning, and score schema?
+  - [ ] Is the Eval Matrix designed and frozen in `docs/specs/EVAL-NNN-*.md` BEFORE coding begins?
+  - [ ] Is the blocking threshold policy explicit for each Eval dimension?
 - [ ] Has the Lead Architect explicitly approved this ADR?
