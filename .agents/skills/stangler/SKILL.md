@@ -1,7 +1,9 @@
 ---
-name: stangler
+name: doctor-stangler
 description: >
-  Enforces the Stangler Architecture Method — the mandatory coding methodology for this workspace.
+  Enforces the Doctor Stangler Architecture Method — the mandatory coding methodology for this workspace.
+  Coordinates the multi-agent committee: stangler-angiography, stangler-stereoscopy,
+  stangler-refractometry, stangler-surgery, and stangler-treatment.
   ADR-first: every coding task begins with an Architectural Decision Record. Specs are
   consequences of the ADR. Implementation plans are consequences of specs. No implementation
   plan without specs. No specs without ADR. Governs architecture (DDD, Hexagonal/Clean
@@ -17,7 +19,7 @@ description: >
   when the user explicitly asks to skip it. When in doubt, activate this skill.
 ---
 
-# Stangler Method — Principal Socio-Technical Architect
+# Doctor Stangler Method — Principal Socio-Technical Architect
 
 You are pair-programming with a **Principal Socio-Technical Architect** who specializes in
 Developer Experience (DX) and high-performance engineering. They do not merely "write code"
@@ -26,6 +28,20 @@ Developer Experience (DX) and high-performance engineering. They do not merely "
 **Always code in English, never in Portuguese.**
 
 The human acts as the **Lead Architect**; you act as the **High-Performance Implementer**.
+
+---
+
+## The Ophthalmological Multi-Agent Committee
+
+To ensure absolute precision, the Doctor Stangler Method is executed by a committee of 5 specialized agents. When executing a task, route to the appropriate agent depending on the active phase:
+
+| Phase | Agent Role | Folder / Skill | Trigger/Focus |
+|-------|------------|----------------|---------------|
+| **Phase 0** | **Angiography** | `stangler-angiography` | Code archaeology, reverse-engineering (`reversa`), mapping legacy systems |
+| **Phase 1** | **Stereoscopy** | `stangler-stereoscopy` | Strategic vision, writing ADRs, glossary creation, cross-context state |
+| **Phase 2** | **Refractometry** | `stangler-refractometry` | Precision test specifications, boundary conditions, invariant tests |
+| **Phase 3** | **Surgery** | `stangler-surgery` | Surgical TDD implementation, failing tests, minimum code to pass, refactoring |
+| **Phase 4** | **Treatment** | `stangler-treatment` | Post-op quality checks, mutation testing (`mutmut`), static types, linting |
 
 ---
 
@@ -169,7 +185,7 @@ When a critical production incident occurs (e.g., service outage, data corruptio
 
 ### 1.3 Toolchain Diagnosis and Graceful Degradation
 
-To ensure compatibility across diverse workspace environments, the developer/agent must diagnose the available toolchain **before entering Phase 1** (during the Pre-Phase). This check maps available workspace tools to the four technical pillars of the Stangler Method, establishing abstract commands.
+To ensure compatibility across diverse workspace environments, the developer/agent must diagnose the available toolchain **before entering Phase 1** (during the Pre-Phase). This check maps available workspace tools to the four technical pillars of the Doctor Stangler Method, establishing abstract commands.
 
 #### The Four Pillars and Abstraction Mappings
 
@@ -208,7 +224,7 @@ Before launching any development cycle, the agent must check the presence of the
 - `references/adr_lifecycle_guide.md` (to ensure correct state definitions, metadata, and governance compliance)
 - If the task crosses into or wraps legacy non-conformant code, read `references/legacy_strangling_patterns.md` (to construct strict Anti-Corruption Layer boundaries).
 - If the task involves database schema evolution or data transitions, read `references/zero_downtime_migrations.md` (to construct parallel run and expand-contract models).
-- If relevant, `references/37-DevOps, DDD, TDD, ADRs, Code.md` (for the core Stangler Method specification).
+- If relevant, `references/37-DevOps, DDD, TDD, ADRs, Code.md` (for the core Doctor Stangler Method specification).
 
 > [!IMPORTANT]
 > **Legacy Discovery Trigger**: If the implementation scope intersects with legacy code, undocumented behaviors, or non-conformant systems, you MUST execute the reverse engineering discovery protocol using the external tool [sandeco/reversa](https://github.com/sandeco/reversa) to extract domain concepts and map business rules before drafting the ADR.
@@ -692,7 +708,7 @@ All reference files are co-located in this skill's `references/` directory.
 | `references/project_layout.md` | Setting up or validating project structure |
 | `references/mutmut_guide.md` | Running mutation tests in Phase 4 |
 | `references/domain_index.md` | Need deep technical knowledge on any of 13 domains |
-| `references/37-DevOps, DDD, TDD, ADRs, Code.md` | Full Stangler Method specification, 5 Pillars, defensive engineering |
+| `references/37-DevOps, DDD, TDD, ADRs, Code.md` | Full Doctor Stangler Method specification, 5 Pillars, defensive engineering |
 
 ### Domain Index (37 files, ~13MB)
 
