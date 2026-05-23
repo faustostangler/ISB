@@ -4,7 +4,7 @@ This index maps 13 technical domains across 37 reference files.
 **Read only the file(s) relevant to your current task.**
 
 All files are co-located in this skill's `references/` directory.
-Path: `.agents/stangler-doctor/references/`
+Path: `.agents/skills/stangler-doctor/references/`
 
 ### Additional References (Skill-Specific)
 | File | Purpose |

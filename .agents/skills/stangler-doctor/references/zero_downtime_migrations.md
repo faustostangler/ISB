@@ -163,4 +163,4 @@ Before committing any migration file to the repository, the following checklist 
    SET lock_timeout = '2s';
    ```
 3. **Idempotence**: All migrations must be idempotent or safely re-runnable in case of partial deployment failures.
-4. **Anti-Corruption Integration**: Any structural change affecting bounded context boundaries must pass through the Anti-Corruption Layer (ACL) defined in [Legacy Strangling Patterns](file:///mnt/gamer_d/Fausto%20Stangler/Documentos/Python/ISB/.agents/stangler-doctor/references/legacy_strangling_patterns.md).
+4. **Anti-Corruption Integration**: Any structural change affecting bounded context boundaries must pass through the Anti-Corruption Layer (ACL) defined in [Legacy Strangling Patterns](file:///mnt/gamer_d/Fausto%20Stangler/Documentos/Python/ISB/.agents/skills/stangler-doctor/references/legacy_strangling_patterns.md).

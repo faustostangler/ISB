@@ -4,14 +4,14 @@
 
 ## Activation
 
-The orchestrator skill `stangler-doctor` ([SKILL.md](/.agents/stangler-doctor/SKILL.md)) coordinates the committee and activates on **every coding task** by default — architecture, implementation, debugging, refactoring, testing, deployment, and any technical decision-making. The only exception is when the user explicitly asks to skip it.
+The orchestrator skill `stangler-doctor` ([SKILL.md](/.agents/skills/stangler-doctor/SKILL.md)) coordinates the committee and activates on **every coding task** by default — architecture, implementation, debugging, refactoring, testing, deployment, and any technical decision-making. The only exception is when the user explicitly asks to skip it.
 
 Individual agent skills route specific tasks depending on the phase of the development lifecycle:
-- **Phase 0: Angiography** ([SKILL.md](/.agents/stangler-angiography/SKILL.md)) — Code archaeology and legacy reverse-engineering.
-- **Phase 1: Stereoscopy** ([SKILL.md](/.agents/stangler-stereoscopy/SKILL.md)) — Strategic vision and ADR drafting.
-- **Phase 2: Refractometry** ([SKILL.md](/.agents/stangler-refractometry/SKILL.md)) — Precision test specifications.
-- **Phase 3: Surgery** ([SKILL.md](/.agents/stangler-surgery/SKILL.md)) — High-performance TDD execution.
-- **Phase 4: Treatment** ([SKILL.md](/.agents/stangler-treatment/SKILL.md)) — Mutation testing and quality post-op treatment.
+- **Phase 0: Angiography** ([SKILL.md](/.agents/skills/stangler-angiography/SKILL.md)) — Code archaeology and legacy reverse-engineering.
+- **Phase 1: Stereoscopy** ([SKILL.md](/.agents/skills/stangler-stereoscopy/SKILL.md)) — Strategic vision and ADR drafting.
+- **Phase 2: Refractometry** ([SKILL.md](/.agents/skills/stangler-refractometry/SKILL.md)) — Precision test specifications.
+- **Phase 3: Surgery** ([SKILL.md](/.agents/skills/stangler-surgery/SKILL.md)) — High-performance TDD execution.
+- **Phase 4: Treatment** ([SKILL.md](/.agents/skills/stangler-treatment/SKILL.md)) — Mutation testing and quality post-op treatment.
 
 ## Core Protocol
 
