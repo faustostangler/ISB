@@ -2,8 +2,15 @@ import logging
 from datetime import datetime, timezone
 from isb.shared_kernel.types import ContentId, ProcessingStatus
 from isb.shared_kernel.events import EventBus, KnowledgeSynthesized
+from isb.transcription.domain.value_objects import TranscriptText
 from isb.knowledge.domain.entities import RawNote, WikiArticle
-from isb.knowledge.domain.value_objects import NoteMetadata
+from isb.knowledge.domain.value_objects import (
+    NoteMetadata,
+    NoteTitle,
+    ArticleContent,
+    ArticleTag,
+    ArticleBacklink,
+)
 from isb.knowledge.application.ports import LLMPort, VaultPort, KnowledgeManifestPort
 
 logger = logging.getLogger(__name__)
@@ -55,28 +62,35 @@ class SynthesizeWikiUseCase:
 
         try:
             # Step 3: Load existing knowledge graphs
-            # We load existing wiki notes so the LLM synthesis can establish context,
-            # discover duplicate subjects, or update existing articles instead of duplicating files.
             existing_articles = self.vault.list_wiki_articles()
 
             # Step 4: Invoke local LLM port using Pydantic structured output validation
-            # Ensures LLM response exactly matches the required schema fields
             synthesized = self.llm.synthesize_wiki(raw_note, existing_articles)
 
             # Step 5: Check for existing article in vault to update, or create a new one
-            # Prevents document duplication and merges related ideas into unified knowledge assets.
-            existing_article = self.vault.find_wiki_article_by_title(synthesized.title)
+            title_vo = NoteTitle(synthesized.title)
+            existing_article = self.vault.find_wiki_article_by_title(title_vo)
             
             if existing_article:
                 # Scenario A: Article exists. We merge content and append references.
                 logger.info("Found existing WikiArticle '%s'. Merging content.", synthesized.title)
                 article = existing_article
-                article.content = synthesized.content
+                article.content = ArticleContent(synthesized.content)
+                
                 # Merge tags to avoid duplicates
-                article.tags = list(set(article.tags + synthesized.tags))
+                new_tags = [ArticleTag(t) for t in synthesized.tags]
+                existing_tag_strs = {t.value for t in article.tags}
+                for nt in new_tags:
+                    if nt.value not in existing_tag_strs:
+                        article.tags.append(nt)
+                
                 # Add backlinks formatted as Obsidian wiki-links [[Topic]]
-                new_backlinks = [f"[[{topic}]]" for topic in synthesized.related_topics]
-                article.backlinks = list(set(article.backlinks + new_backlinks))
+                new_backlinks = [ArticleBacklink(f"[[{topic}]]") for topic in synthesized.related_topics]
+                existing_backlink_strs = {b.value for b in article.backlinks}
+                for nb in new_backlinks:
+                    if nb.value not in existing_backlink_strs:
+                        article.backlinks.append(nb)
+                
                 # Append source note reference if not already tracked
                 if cid not in article.source_notes:
                     article.source_notes.append(cid)
@@ -85,12 +99,12 @@ class SynthesizeWikiUseCase:
             else:
                 # Scenario B: Article is new. Instantiate a fresh WikiArticle entity.
                 logger.info("Creating new WikiArticle '%s'.", synthesized.title)
-                backlinks = [f"[[{topic}]]" for topic in synthesized.related_topics]
+                backlinks = [ArticleBacklink(f"[[{topic}]]") for topic in synthesized.related_topics]
                 article = WikiArticle(
                     article_id=ContentId.generate(),
-                    title=synthesized.title,
-                    content=synthesized.content,
-                    tags=synthesized.tags,
+                    title=title_vo,
+                    content=ArticleContent(synthesized.content),
+                    tags=[ArticleTag(t) for t in synthesized.tags],
                     backlinks=backlinks,
                     source_notes=[cid],
                     last_updated=datetime.now(timezone.utc)
@@ -104,12 +118,13 @@ class SynthesizeWikiUseCase:
             self.manifest.mark_status(cid, ProcessingStatus.COMPLETED)
 
             # Step 8: Construct and publish KnowledgeSynthesized domain event
-            # Signals execution completions to tracking telemetry or external dashboards.
             event = KnowledgeSynthesized(
                 content_id=cid,
                 raw_note_path=raw_path,
                 wiki_articles_updated=[wiki_path]
             )
+            if hasattr(self.manifest, "save_event"):
+                self.manifest.save_event(event)
             self.event_bus.publish(event)
             logger.info("Completed synthesis for ContentId %s.", cid)
             
@@ -118,7 +133,6 @@ class SynthesizeWikiUseCase:
 
         except Exception as err:
             # Step 10: Fail-fast exception safety block
-            # Transition processing status back to FAILED to allow workflow retries.
             logger.exception("Failed synthesis for ContentId %s.", cid)
             self.manifest.mark_status(cid, ProcessingStatus.FAILED)
             raise
@@ -173,8 +187,8 @@ class ProcessTranscriptUseCase:
         # Step 2: Instantiate the RawNote domain entity
         raw_note = RawNote(
             content_id=content_id,
-            title=title,
-            transcript_text=transcript_text,
+            title=NoteTitle(title),
+            transcript_text=TranscriptText(transcript_text),
             metadata=metadata
         )
         

@@ -1,7 +1,12 @@
 import pytest
 from isb.shared_kernel.types import ContentId
 from isb.transcription.domain.entities import Transcript
-from isb.transcription.domain.value_objects import Segment
+from isb.transcription.domain.value_objects import (
+    Segment,
+    LanguageCode,
+    ModelName,
+    TranscriptText,
+)
 
 def test_segment_initialization() -> None:
     """Test creating a Segment value object."""
@@ -35,18 +40,18 @@ def test_transcript_initialization() -> None:
     
     transcript = Transcript(
         content_id=content_id,
-        full_text="Hello",
+        full_text=TranscriptText("Hello"),
         segments=[segment],
-        language="pt",
-        model="base",
+        language=LanguageCode("pt"),
+        model=ModelName("base"),
         duration_seconds=2.0
     )
     
     assert transcript.content_id == content_id
-    assert transcript.full_text == "Hello"
+    assert transcript.full_text.value == "Hello"
     assert transcript.segments == [segment]
-    assert transcript.language == "pt"
-    assert transcript.model == "base"
+    assert transcript.language == LanguageCode("pt")
+    assert transcript.model == ModelName("base")
     assert transcript.duration_seconds == 2.0
     assert transcript.word_count() == 1
     assert transcript.has_segments() is True
@@ -55,11 +60,30 @@ def test_transcript_empty_word_count() -> None:
     """Test word count with empty text."""
     transcript = Transcript(
         content_id=ContentId.generate(),
-        full_text="   ",
+        full_text=TranscriptText("   "),
         segments=[],
-        language="en",
-        model="base",
+        language=LanguageCode("en"),
+        model=ModelName("base"),
         duration_seconds=0.0
     )
     assert transcript.word_count() == 0
     assert transcript.has_segments() is False
+
+def test_transcription_value_objects_validation() -> None:
+    """Test validations for LanguageCode, ModelName, and TranscriptText."""
+    with pytest.raises(ValueError):
+        LanguageCode("p")
+    with pytest.raises(ValueError):
+        LanguageCode("longerthanfive")
+    with pytest.raises(TypeError):
+        LanguageCode(123)  # type: ignore
+
+    with pytest.raises(ValueError):
+        ModelName("")
+    with pytest.raises(TypeError):
+        ModelName(None)  # type: ignore
+
+    with pytest.raises(ValueError):
+        TranscriptText("  ")
+    with pytest.raises(TypeError):
+        TranscriptText(1.23)  # type: ignore

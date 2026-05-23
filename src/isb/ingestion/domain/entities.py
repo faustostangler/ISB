@@ -1,22 +1,34 @@
 from datetime import datetime, timezone
 from pathlib import Path
-from dataclasses import dataclass, field
+from pydantic import BaseModel, ConfigDict, Field, BeforeValidator
+from typing import Annotated
 from isb.shared_kernel.types import ContentId, ProcessingStatus
-from isb.ingestion.domain.value_objects import AudioTrack
+from isb.ingestion.domain.value_objects import (
+    AudioTrack,
+    ExternalId,
+    EpisodeTitle,
+    DurationSeconds,
+    PublishedAt,
+    SourceId,
+    SourceName,
+    SourceUrl,
+)
 from isb.ingestion.domain.exceptions import DuplicateEpisodeError
 
-@dataclass
-class MediaEpisode:
+
+class MediaEpisode(BaseModel):
     """Domain Entity representing a single episode or video extracted from a source.
 
     Encapsulates lifecycle transitions and validation state checks for individual
     videos/podcasts as they are processed within the Ingestion bounded context.
     """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     content_id: ContentId
-    external_id: str  # Platform-specific ID (e.g. YouTube video ID)
-    title: str
-    published_at: datetime
-    duration_seconds: int
+    external_id: Annotated[ExternalId, BeforeValidator(lambda v: ExternalId(v) if isinstance(v, str) else v)]
+    title: Annotated[EpisodeTitle, BeforeValidator(lambda v: EpisodeTitle(v) if isinstance(v, str) else v)]
+    published_at: Annotated[PublishedAt, BeforeValidator(lambda v: PublishedAt(v) if isinstance(v, datetime) else v)]
+    duration_seconds: Annotated[DurationSeconds, BeforeValidator(lambda v: DurationSeconds(v) if isinstance(v, int) else v)]
     status: ProcessingStatus = ProcessingStatus.PENDING
     audio_track: AudioTrack | None = None
 
@@ -31,20 +43,17 @@ class MediaEpisode:
             size_bytes: Size of the extracted audio file in bytes.
         """
         # Step 1: Instantiate and associate the immutable AudioTrack Value Object
-        # We encapsulate this data to guarantee the presence of required file system details
         self.audio_track = AudioTrack(
             file_path=audio_path,
             file_format=file_format,
             size_bytes=size_bytes,
-            duration_seconds=self.duration_seconds
+            duration_seconds=int(self.duration_seconds.value)
         )
         # Step 2: Transition the episode status to the next logical stage
         self.status = ProcessingStatus.TRANSCRIBING
 
     def mark_failed(self) -> None:
         """Mark this episode's ingestion stage as failed."""
-        # Step 1: Transition the internal status state to FAILED
-        # Signals the pipeline that this episode is eligible for retry execution on next sync
         self.status = ProcessingStatus.FAILED
 
     def is_extracted(self) -> bool:
@@ -53,21 +62,21 @@ class MediaEpisode:
         Returns:
             bool: True if an AudioTrack object is associated, False otherwise.
         """
-        # Step 1: Check presence of local AudioTrack mapping
         return self.audio_track is not None
 
 
-@dataclass
-class MediaSource:
+class MediaSource(BaseModel):
     """Domain Entity representing a collection of media episodes (e.g., channel, playlist).
 
     Coordinates and aggregates episodes fetched from a specific external channel/URL.
     """
-    source_id: str
-    url: str
-    name: str
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source_id: Annotated[SourceId, BeforeValidator(lambda v: SourceId(v) if isinstance(v, str) else v)]
+    url: Annotated[SourceUrl, BeforeValidator(lambda v: SourceUrl(v) if isinstance(v, str) else v)]
+    name: Annotated[SourceName, BeforeValidator(lambda v: SourceName(v) if isinstance(v, str) else v)]
     last_synced_at: datetime | None = None
-    episodes: list[MediaEpisode] = field(default_factory=list)
+    episodes: list[MediaEpisode] = Field(default_factory=list)
 
     def add_episode(self, episode: MediaEpisode) -> None:
         """Add an episode to this source, enforcing uniqueness check on external_id.
@@ -78,14 +87,11 @@ class MediaSource:
         Raises:
             DuplicateEpisodeError: If an episode with the same external_id is already present.
         """
-        # Step 1: Perform validation check for uniqueness within this source aggregate
-        # We do this to prevent duplicate downloads/transcriptions of the same video
         if self.has_episode(episode.external_id):
             raise DuplicateEpisodeError(f"Episode with external ID {episode.external_id} already exists in source.")
-        # Step 2: Append the episode to the collection if unique
         self.episodes.append(episode)
 
-    def has_episode(self, external_id: str) -> bool:
+    def has_episode(self, external_id: ExternalId) -> bool:
         """Check if an episode with the given external ID is already tracked by this source.
 
         Args:
@@ -94,10 +100,8 @@ class MediaSource:
         Returns:
             bool: True if present in episodes collection, False otherwise.
         """
-        # Step 1: Search through list of child entities for matching external_id
-        return any(ep.external_id == external_id for ep in self.episodes)
+        return any(str(ep.external_id) == str(external_id) for ep in self.episodes)
 
     def mark_synced(self) -> None:
         """Update last sync timestamp to current UTC time."""
-        # Step 1: Update the sync timestamp to track history of source scanning events
         self.last_synced_at = datetime.now(timezone.utc)

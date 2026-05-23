@@ -159,6 +159,24 @@ class Settings(BaseSettings):
         description="Maximum concurrent threads for the ingestion pipeline",
     )
 
+    # --- Telemetry & Observability ---
+    SENTRY_DSN: str | None = Field(
+        default=None,
+        description="Sentry crash reporting DSN",
+    )
+    LANGFUSE_PUBLIC_KEY: str | None = Field(
+        default=None,
+        description="Langfuse client public key",
+    )
+    LANGFUSE_SECRET_KEY: str | None = Field(
+        default=None,
+        description="Langfuse client secret key",
+    )
+    LANGFUSE_HOST: str = Field(
+        default="https://cloud.langfuse.com",
+        description="Langfuse API host endpoint",
+    )
+
 
 # Trigger validation on module load to satisfy fail-fast requirements.
 # If imported within tests, conftest.py overrides env variables to prevent crash.

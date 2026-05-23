@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from isb.shared_kernel.types import ContentId, ProcessingStatus
 from isb.ingestion.domain.entities import MediaSource, MediaEpisode
+from isb.ingestion.domain.value_objects import ExternalId
 
 class MediaExtractorPort(ABC):
     """Port interface for extracting media source metadata and extracting audio tracks.
@@ -41,7 +42,7 @@ class ManifestPort(ABC):
     """
 
     @abstractmethod
-    def is_processed(self, external_id: str) -> bool:
+    def is_processed(self, external_id: ExternalId) -> bool:
         """Check if an external ID has been successfully processed or is currently processing.
 
         Args:
@@ -53,7 +54,7 @@ class ManifestPort(ABC):
         pass
 
     @abstractmethod
-    def get_content_id(self, external_id: str) -> ContentId | None:
+    def get_content_id(self, external_id: ExternalId) -> ContentId | None:
         """Get the internal ContentId registered to this external ID, if exists.
 
         Args:
@@ -65,7 +66,7 @@ class ManifestPort(ABC):
         pass
 
     @abstractmethod
-    def register_episode(self, external_id: str, content_id: ContentId) -> None:
+    def register_episode(self, external_id: ExternalId, content_id: ContentId) -> None:
         """Register a new external ID with an internal ContentId.
 
         Args:
@@ -85,7 +86,7 @@ class ManifestPort(ABC):
         pass
 
     @abstractmethod
-    def has_failed_previously(self, external_id: str) -> bool:
+    def has_failed_previously(self, external_id: ExternalId) -> bool:
         """Check if an external ID has previously failed processing.
 
         Args:

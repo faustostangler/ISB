@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from isb.shared_kernel.types import ContentId, ProcessingStatus
 from isb.transcription.domain.entities import Transcript
+from isb.transcription.domain.value_objects import LanguageCode
 
 class TranscriberPort(ABC):
     """Port interface for transcribing audio files using speech-to-text models.
@@ -10,13 +11,18 @@ class TranscriberPort(ABC):
     """
 
     @abstractmethod
-    def transcribe(self, content_id: ContentId, audio_path: Path, language_hint: str | None = None) -> Transcript:
+    def transcribe(
+        self,
+        content_id: ContentId,
+        audio_path: Path,
+        language_hint: LanguageCode | None = None
+    ) -> Transcript:
         """Run speech-to-text on the audio file and return the constructed Transcript.
 
         Args:
             content_id: Unique identifier for the media episode.
             audio_path: Local Path location of the extracted audio file.
-            language_hint: Optional language preference code (e.g. 'pt') passed to Whisper.
+            language_hint: Optional language preference code passed to Whisper.
 
         Returns:
             Transcript: The completed Transcript domain entity.

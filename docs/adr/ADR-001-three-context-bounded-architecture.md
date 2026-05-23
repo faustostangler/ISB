@@ -35,6 +35,23 @@ We will decompose the application into three Bounded Contexts (**Ingestion**, **
 ### Neutral
 - An in-memory queue/EventBus is sufficient for version 0.1, but makes the codebase microservices-ready.
 
+## Cross-Context State Strategy
+
+### 7a. Boundary Violations Check
+- **Check:** Does any module read from or write directly to another module's persistence layer?
+- **Answer:** No. Each context (Ingestion, Transcription, Knowledge) communicates exclusively via domain events published to the in-memory `EventBus`. The `SQLiteManifestAdapter` acts as a shared database registry for idempotency, but accesses are strictly segregated via context-specific port interfaces (`ManifestPort`, `TranscriptionManifestPort`, `KnowledgeManifestPort`), preventing cross-module query coupling.
+
+### 7b. Consistency Model
+- **Model:** Eventual Consistency (Async Events).
+- **Details:** State transitions are coordinated asynchronously using domain events (`AudioExtracted` and `TranscriptionCompleted`). A transactional `outbox` table in SQLite registers all generated events in the same database transaction as status updates, preventing lost events upon pipeline crashes.
+
+### 7c. Failure Modes & Compensation (Saga Pattern)
+- **Coordination:** Choreography style (each context reacts to events and handles failure compensation autonomously).
+- **Compensation Events:**
+  - If Transcription fails, `TranscribeAudioUseCase` marks the content status as `FAILED` in the SQLite registry. This allows Ingestion to retry processing on subsequent scans.
+  - If LLM Synthesis fails, `SynthesizeWikiUseCase` marks the status as `FAILED` in the SQLite registry. Compensation logic allows the system to retry synthesis of existing transcription files on disk without needing to re-transcribe or re-download the audio.
+- **Maximum Acceptable Compensation Delay:** 10 minutes (SLA).
+
 ## Compliance
 
 - [x] Hexagonal Architecture layers respected
@@ -42,6 +59,7 @@ We will decompose the application into three Bounded Contexts (**Ingestion**, **
 - [x] Tests strategy defined (Red-Green-Refactor tests mirrored in `tests/`)
 - [x] Observability plan included (status manifestation in SQLite registry)
 - [x] Resource constraints (6GB VRAM) addressed by sequential pipeline configuration
+- [x] Cross-Context State Strategy section complete and verified
 
 ## References
 

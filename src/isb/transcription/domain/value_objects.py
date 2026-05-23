@@ -32,3 +32,48 @@ class Segment:
         # Model confidence percentage must fall within standard mathematical probability range
         if not (0.0 <= self.confidence <= 1.0):
             raise ValueError("confidence must be between 0.0 and 1.0")
+
+
+@dataclass(frozen=True)
+class LanguageCode:
+    """Value Object representing a speech-to-text language identifier."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("LanguageCode value must be a string")
+        if not (2 <= len(self.value.strip()) <= 5):
+            raise ValueError("LanguageCode must be between 2 and 5 characters")
+
+    def __str__(self) -> str:
+        return self.value.strip()
+
+
+@dataclass(frozen=True)
+class ModelName:
+    """Value Object representing a speech-to-text model's name/tag."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("ModelName value must be a string")
+        if not self.value.strip():
+            raise ValueError("ModelName cannot be empty or whitespace")
+
+    def __str__(self) -> str:
+        return self.value.strip()
+
+
+@dataclass(frozen=True)
+class TranscriptText:
+    """Value Object representing the full transcribed text content."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("TranscriptText value must be a string")
+        if not self.value.strip():
+            raise ValueError("TranscriptText cannot be empty or whitespace")
+
+    def __str__(self) -> str:
+        return self.value.strip()

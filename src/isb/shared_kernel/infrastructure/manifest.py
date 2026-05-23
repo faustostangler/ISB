@@ -51,8 +51,48 @@ class SQLiteManifestAdapter(ManifestPort, TranscriptionManifestPort, KnowledgeMa
                     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # Step 3a: Execute outbox table creation query
+            # Transactionally logs domain events for reliable eventual consistency processing.
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS outbox (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    processed INTEGER DEFAULT 0
+                )
+            """)
             # Step 4: Commit changes to save transaction state
             # Persists the schemas to the SQLite database on disk
+            conn.commit()
+
+    def save_event(self, event: Any) -> None:
+        """Save a domain event to the outbox table for transactional publishing.
+
+        Args:
+            event: The DomainEvent instance to persist.
+        """
+        import json
+        # Extract base fields and convert event-specific fields to JSON payload
+        payload = {
+            "content_id": str(event.content_id),
+            "event_id": str(event.event_id),
+            "occurred_at": event.occurred_at.isoformat(),
+        }
+        for field_name, val in event.__dict__.items():
+            if field_name not in ["content_id", "event_id", "occurred_at"]:
+                if isinstance(val, Path):
+                    payload[field_name] = str(val)
+                elif isinstance(val, dict):
+                    payload[field_name] = {k: (str(v) if isinstance(v, Path) else v) for k, v in val.items()}
+                else:
+                    payload[field_name] = val
+
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT INTO outbox (event_id, event_type, payload) VALUES (?, ?, ?)",
+                (str(event.event_id), type(event).__name__, json.dumps(payload, ensure_ascii=False))
+            )
             conn.commit()
 
     def is_processed(self, external_id: str) -> bool:

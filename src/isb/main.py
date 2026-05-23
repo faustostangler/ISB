@@ -38,6 +38,21 @@ from isb.transcription.infrastructure.adapters import WhisperTranscriberAdapter
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+if settings.SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.ENV,
+            debug=settings.DEBUG,
+            traces_sample_rate=1.0 if settings.DEBUG else 0.1,
+        )
+        logger.info("Sentry error monitoring initialized.")
+    except ImportError:
+        logger.warning("sentry-sdk package not installed. Sentry telemetry disabled.")
+    except Exception as e:
+        logger.exception("Failed to initialize Sentry: %s", e)
+
 
 # ---------------------------------------------------------------------------
 # Helper: YAML source loader
@@ -138,13 +153,12 @@ def bootstrap_composition_root() -> tuple[EventBus, ExtractAudioUseCase]:
         model_name=settings.WHISPER_MODEL,
     )
 
-    # Step 5: Instantiate the Knowledge infrastructure adapters (Ollama + Obsidian).
-    # Why: OllamaLLMAdapter implements LLMPort; ObsidianVaultAdapter implements
-    # VaultPort.  Both communicate only with the outside world (HTTP + filesystem)
-    # and are replaced by doubles in tests — the ports guarantee the contracts.
     llm = OllamaLLMAdapter(
         base_url=settings.OLLAMA_BASE_URL,
         model_name=settings.OLLAMA_MODEL,
+        langfuse_public_key=settings.LANGFUSE_PUBLIC_KEY,
+        langfuse_secret_key=settings.LANGFUSE_SECRET_KEY,
+        langfuse_host=settings.LANGFUSE_HOST,
     )
     vault = ObsidianVaultAdapter(vault_path=settings.OBSIDIAN_VAULT_PATH)
 
@@ -191,10 +205,11 @@ def bootstrap_composition_root() -> tuple[EventBus, ExtractAudioUseCase]:
         language_hint: str | None = event.metadata.get("language")
 
         # Step 7c: Execute the transcription use case with the audio file path.
+        from isb.transcription.domain.value_objects import LanguageCode
         transcribe_use_case.execute(
             content_id=event.content_id,
             audio_path=event.audio_path,
-            language_hint=language_hint,
+            language_hint=LanguageCode(language_hint) if language_hint else None,
         )
 
     # Step 8: Subscribe event handlers to bridge Transcription → Knowledge.

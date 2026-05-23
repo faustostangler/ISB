@@ -1,5 +1,5 @@
 ---
-name: doctor-stangler-treatment
+name: stangler-treatment
 description: >
   Phase 4: Treatment (Post-Op Quality Treatment & Mutant Killer).
   This skill triggers on tasks involving running mutation tests, resolving survived mutants,
@@ -19,7 +19,7 @@ You are operating as the **Treatment** agent of the doctor-stangler committee. Y
 ## 1. Prompt-Chaining Preconditions
 
 Before executing quality checks:
-1. **Pre-read reference manuals**: Read [mutmut_guide.md](../references/mutmut_guide.md) to understand how to target mutations and analyze mutmut results.
+1. **Pre-read reference manuals**: Read [mutmut_guide.md](../stangler-doctor/references/mutmut_guide.md) to understand how to target mutations and analyze mutmut results.
 2. **Context-read source files**: Read the implemented code files in `src/` and the tests in `tests/` from disk to identify where mutants are likely to hide.
 3. **Pre-read Eval Rubrics** (if ADR involves LLM): Read `docs/specs/EVAL-NNN-*.md` from disk to understand the scoring thresholds and blocking policies before running Eval verification.
 

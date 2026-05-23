@@ -2,7 +2,15 @@ import pytest
 from datetime import datetime, timezone
 from isb.shared_kernel.types import ContentId
 from isb.knowledge.domain.entities import RawNote, WikiArticle
-from isb.knowledge.domain.value_objects import NoteMetadata, SynthesizedArticleSchema
+from isb.transcription.domain.value_objects import TranscriptText
+from isb.knowledge.domain.value_objects import (
+    NoteMetadata,
+    SynthesizedArticleSchema,
+    NoteTitle,
+    ArticleContent,
+    ArticleTag,
+    ArticleBacklink,
+)
 from pydantic import ValidationError
 
 def test_note_metadata_validation() -> None:
@@ -35,8 +43,8 @@ def test_raw_note_obsidian_markdown() -> None:
     
     raw_note = RawNote(
         content_id=content_id,
-        title="Intro to LLMs",
-        transcript_text="This is a test transcript.",
+        title=NoteTitle("Intro to LLMs"),
+        transcript_text=TranscriptText("This is a test transcript."),
         metadata=meta
     )
     
@@ -58,10 +66,10 @@ def test_wiki_article_obsidian_markdown() -> None:
     
     article = WikiArticle(
         article_id=article_id,
-        title="Large Language Models",
-        content="Comprehensive guide on LLMs.",
-        tags=["ai", "deep-learning"],
-        backlinks=["[[Intro to LLMs]]"],
+        title=NoteTitle("Large Language Models"),
+        content=ArticleContent("Comprehensive guide on LLMs."),
+        tags=[ArticleTag("ai"), ArticleTag("deep-learning")],
+        backlinks=[ArticleBacklink("[[Intro to LLMs]]")],
         source_notes=[source_id1],
         last_updated=datetime.now(timezone.utc)
     )
@@ -70,7 +78,7 @@ def test_wiki_article_obsidian_markdown() -> None:
     
     assert "---" in markdown
     assert "title: Large Language Models" in markdown
-    assert "tags:\n- ai\n- deep-learning" in markdown
+    assert "tags:\n- ai\n- deeplearning" in markdown
     assert f"source_notes:\n- {source_id1}" in markdown
     assert "Comprehensive guide on LLMs." in markdown
 
@@ -98,3 +106,29 @@ def test_synthesized_article_schema_validation() -> None:
     
     with pytest.raises(ValidationError):
         SynthesizedArticleSchema(**invalid_data)
+
+def test_knowledge_value_objects_validation() -> None:
+    """Test validations for NoteTitle, ArticleContent, ArticleTag, and ArticleBacklink."""
+    with pytest.raises(ValueError):
+        NoteTitle("Invalid/Title")
+    with pytest.raises(ValueError):
+        NoteTitle("   ")
+    with pytest.raises(TypeError):
+        NoteTitle(123)  # type: ignore
+
+    with pytest.raises(ValueError):
+        ArticleContent("short")
+    with pytest.raises(TypeError):
+        ArticleContent(None)  # type: ignore
+
+    with pytest.raises(ValueError):
+        ArticleTag("!!!")
+    with pytest.raises(TypeError):
+        ArticleTag(123)  # type: ignore
+
+    with pytest.raises(ValueError):
+        ArticleBacklink("not-a-link")
+    with pytest.raises(ValueError):
+        ArticleBacklink("[[]]")
+    with pytest.raises(TypeError):
+        ArticleBacklink(123)  # type: ignore

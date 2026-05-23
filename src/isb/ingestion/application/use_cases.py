@@ -102,12 +102,14 @@ class ExtractAudioUseCase:
                     content_id=episode.content_id,
                     audio_path=audio_path,
                     metadata={
-                        "title": episode.title,
-                        "external_id": episode.external_id,
-                        "duration_seconds": episode.duration_seconds,
-                        "published_at": episode.published_at.isoformat(),
+                        "title": str(episode.title),
+                        "external_id": str(episode.external_id),
+                        "duration_seconds": int(episode.duration_seconds.value),
+                        "published_at": episode.published_at.to_iso(),
                     }
                 )
+                if hasattr(self.manifest, "save_event"):
+                    self.manifest.save_event(event)
                 self.event_bus.publish(event)
                 logger.info("Successfully extracted audio for %s and published event.", ext_id)
 

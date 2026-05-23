@@ -1,5 +1,5 @@
 ---
-name: doctor-stangler-stereoscopy
+name: stangler-stereoscopy
 description: >
   Phase 1: Stereoscopy (Strategic Vision & ADR).
   This skill triggers on tasks involving architectural decisions, bounded contexts,
@@ -20,10 +20,10 @@ Every significant architectural decision begins with an **Architectural Decision
 Before drafting the ADR:
 1. **Predecessor Artifact**: Read the legacy discovery notes (`docs/legacy_discovery/DISCO-NNN-*.md`) from disk if the task intersects with legacy code.
 2. **Methodology Corpus**: You MUST read the following artifacts from the shared `references` directory:
-   - [adr_template.md](../references/adr_template.md) (for compliance check verification)
-   - [adr_lifecycle_guide.md](../references/adr_lifecycle_guide.md) (for state definitions and emergency retrospective formats)
-   - [legacy_strangling_patterns.md](../references/legacy_strangling_patterns.md) (if wrapping legacy code with ACLs)
-   - [zero_downtime_migrations.md](../references/zero_downtime_migrations.md) (if evolving DB schemas)
+   - [adr_template.md](../stangler-doctor/references/adr_template.md) (for compliance check verification)
+   - [adr_lifecycle_guide.md](../stangler-doctor/references/adr_lifecycle_guide.md) (for state definitions and emergency retrospective formats)
+   - [legacy_strangling_patterns.md](../stangler-doctor/references/legacy_strangling_patterns.md) (if wrapping legacy code with ACLs)
+   - [zero_downtime_migrations.md](../stangler-doctor/references/zero_downtime_migrations.md) (if evolving DB schemas)
 
 ---
 

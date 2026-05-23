@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from isb.shared_kernel.types import ContentId, ProcessingStatus
 from isb.knowledge.domain.entities import RawNote, WikiArticle
-from isb.knowledge.domain.value_objects import SynthesizedArticleSchema
+from isb.knowledge.domain.value_objects import SynthesizedArticleSchema, NoteTitle
 
 class LLMPort(ABC):
     """Port interface for interacting with the Local LLM (qwen2.5:7b via Ollama).
@@ -64,11 +64,11 @@ class VaultPort(ABC):
         pass
 
     @abstractmethod
-    def find_wiki_article_by_title(self, title: str) -> WikiArticle | None:
+    def find_wiki_article_by_title(self, title: NoteTitle) -> WikiArticle | None:
         """Find a single synthesized wiki article matching the given title.
 
         Args:
-            title: The title name string of the target article.
+            title: The title name of the target article.
 
         Returns:
             WikiArticle | None: The found WikiArticle entity or None.

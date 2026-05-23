@@ -1,5 +1,5 @@
 ---
-name: doctor-stangler-refractometry
+name: stangler-refractometry
 description: >
   Phase 2: Refractometry (Precision Test Specifications).
   This skill triggers on tasks involving writing test specs, defining acceptance criteria,

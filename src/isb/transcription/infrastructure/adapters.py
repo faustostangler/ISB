@@ -3,7 +3,12 @@ import whisper
 from pathlib import Path
 from isb.shared_kernel.types import ContentId
 from isb.transcription.domain.entities import Transcript
-from isb.transcription.domain.value_objects import Segment
+from isb.transcription.domain.value_objects import (
+    Segment,
+    LanguageCode,
+    ModelName,
+    TranscriptText,
+)
 from isb.transcription.application.ports import TranscriberPort
 
 class WhisperTranscriberAdapter(TranscriberPort):
@@ -34,7 +39,12 @@ class WhisperTranscriberAdapter(TranscriberPort):
         # during application bootstrap when the transcription context may not be active.
         self._model = None
 
-    def transcribe(self, content_id: ContentId, audio_path: Path, language_hint: str | None = None) -> Transcript:
+    def transcribe(
+        self,
+        content_id: ContentId,
+        audio_path: Path,
+        language_hint: LanguageCode | None = None
+    ) -> Transcript:
         """Runs the speech-to-text inference pipeline on a local audio file.
 
         Loads the Whisper model on-demand, executes the inference process with optional language hints,
@@ -44,7 +54,7 @@ class WhisperTranscriberAdapter(TranscriberPort):
         Args:
             content_id: The ContentId domain identifier of the associated media episode.
             audio_path: Absolute filesystem path to the local audio file.
-            language_hint: Optional ISO language code hint to guide the transcriber model.
+            language_hint: Optional language preference code passed to Whisper.
 
         Returns:
             A Transcript domain entity containing the processed full text, timing segments,
@@ -65,7 +75,7 @@ class WhisperTranscriberAdapter(TranscriberPort):
         
         options = {}
         if language_hint:
-            options["language"] = language_hint
+            options["language"] = language_hint.value
         
         result = self._model.transcribe(str(audio_path), **options)
         
@@ -103,10 +113,10 @@ class WhisperTranscriberAdapter(TranscriberPort):
         
         transcript = Transcript(
             content_id=content_id,
-            full_text=full_text,
+            full_text=TranscriptText(full_text),
             segments=segments,
-            language=detected_language,
-            model=self.model_name,
+            language=LanguageCode(detected_language),
+            model=ModelName(self.model_name),
             duration_seconds=max_end_time
         )
         
@@ -115,9 +125,9 @@ class WhisperTranscriberAdapter(TranscriberPort):
         cache_file_path = self.cache_dir / f"{content_id}.json"
         cache_payload = {
             "content_id": str(content_id),
-            "full_text": transcript.full_text,
-            "language": transcript.language,
-            "model": transcript.model,
+            "full_text": str(transcript.full_text.value),
+            "language": str(transcript.language.value),
+            "model": str(transcript.model.value),
             "duration_seconds": transcript.duration_seconds,
             "segments": [
                 {

@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
+from dataclasses import dataclass
 
 class NoteMetadata(BaseModel):
     """Pydantic model representing immutable frontmatter metadata for RawNotes.
@@ -72,3 +73,72 @@ class SynthesizedArticleSchema(BaseModel):
                 
         return normalized
 
+
+@dataclass(frozen=True)
+class NoteTitle:
+    """Value Object representing a raw note's sanitized title."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("NoteTitle value must be a string")
+        if not self.value.strip():
+            raise ValueError("NoteTitle cannot be empty or whitespace")
+        # Ensure it has filesystem safe characters
+        sanitized = re.sub(r'[\\/:*?"<>|]', " ", self.value)
+        if not sanitized.strip():
+            raise ValueError("NoteTitle contains only illegal characters")
+
+    def __str__(self) -> str:
+        sanitized = re.sub(r'[\\/:*?"<>|]', " ", self.value)
+        return " ".join(sanitized.split())
+
+
+@dataclass(frozen=True)
+class ArticleContent:
+    """Value Object representing the synthesized wiki article's markdown content."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("ArticleContent value must be a string")
+        if len(self.value.strip()) < 10:
+            raise ValueError("ArticleContent must be at least 10 characters long")
+
+    def __str__(self) -> str:
+        return self.value.strip()
+
+
+@dataclass(frozen=True)
+class ArticleTag:
+    """Value Object representing a normalized tag in the wiki article."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("ArticleTag value must be a string")
+        cleaned = "".join(c.lower() for c in self.value if c.isalnum())
+        if not cleaned:
+            raise ValueError("ArticleTag must contain alphanumeric characters")
+
+    def __str__(self) -> str:
+        return "".join(c.lower() for c in self.value if c.isalnum())
+
+
+@dataclass(frozen=True)
+class ArticleBacklink:
+    """Value Object representing an Obsidian style wiki cross-link."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, str):
+            raise TypeError("ArticleBacklink value must be a string")
+        if not (self.value.startswith("[[") and self.value.endswith("]]")):
+            raise ValueError("ArticleBacklink must start with '[[' and end with ']]'")
+        # Ensure content inside link is not empty
+        link_content = self.value[2:-2].strip()
+        if not link_content:
+            raise ValueError("ArticleBacklink target cannot be empty")
+
+    def __str__(self) -> str:
+        return self.value.strip()

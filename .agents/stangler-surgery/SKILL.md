@@ -1,5 +1,5 @@
 ---
-name: doctor-stangler-surgery
+name: stangler-surgery
 description: >
   Phase 3: Surgery (High-Performance Implementation & TDD).
   This skill triggers on tasks involving implementing code, writing unit or integration tests,
@@ -20,8 +20,8 @@ Before writing any code or tests:
 2. **Pre-read Approved ADR**: Read the approved ADR (`docs/adr/ADR-NNN-*.md`) from disk.
 3. **Pre-read Eval Rubrics** (if ADR involves LLM): Read `docs/specs/EVAL-NNN-*.md` from disk to understand what metadata must be captured during implementation.
 4. **Pre-read Reference Manuals**:
-   - If wrapping legacy code, read [legacy_strangling_patterns.md](../references/legacy_strangling_patterns.md) to ensure correct Anti-Corruption Layer (ACL) boundaries.
-   - If writing database migrations/schema updates, read [zero_downtime_migrations.md](../references/zero_downtime_migrations.md) to ensure lock minimization and Expand-Contract compliance.
+   - If wrapping legacy code, read [legacy_strangling_patterns.md](../stangler-doctor/references/legacy_strangling_patterns.md) to ensure correct Anti-Corruption Layer (ACL) boundaries.
+   - If writing database migrations/schema updates, read [zero_downtime_migrations.md](../stangler-doctor/references/zero_downtime_migrations.md) to ensure lock minimization and Expand-Contract compliance.
 
 ---
 
@@ -172,7 +172,7 @@ LANGFUSE_HOST: str = Field(default="https://cloud.langfuse.com", description="La
 ## 3. Reference and Decision Checklist
 
 ### References
-- Refer to [project_layout.md](../references/project_layout.md) to verify directory structure.
+- Refer to [project_layout.md](../stangler-doctor/references/project_layout.md) to verify directory structure.
 
 ### Checklist
 - [ ] Have I re-read the approved Specs and ADR from disk before starting?

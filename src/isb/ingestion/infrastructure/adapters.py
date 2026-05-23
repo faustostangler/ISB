@@ -3,6 +3,12 @@ from pathlib import Path
 from datetime import datetime, timezone
 from isb.shared_kernel.types import ContentId
 from isb.ingestion.domain.entities import MediaSource, MediaEpisode
+from isb.ingestion.domain.value_objects import (
+    ExternalId,
+    EpisodeTitle,
+    DurationSeconds,
+    PublishedAt,
+)
 from isb.ingestion.application.ports import MediaExtractorPort
 
 class YtDlpExtractorAdapter(MediaExtractorPort):
@@ -52,7 +58,7 @@ class YtDlpExtractorAdapter(MediaExtractorPort):
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # External I/O boundary: Perform flat network lookup against the source provider URL.
-            info = ydl.extract_info(source.url, download=False)
+            info = ydl.extract_info(str(source.url.value), download=False)
             if not info:
                 return []
             
@@ -83,10 +89,10 @@ class YtDlpExtractorAdapter(MediaExtractorPort):
                 episodes.append(
                     MediaEpisode(
                         content_id=ContentId.generate(),
-                        external_id=external_id,
-                        title=title,
-                        published_at=published_at,
-                        duration_seconds=duration_seconds
+                        external_id=ExternalId(external_id),
+                        title=EpisodeTitle(title),
+                        published_at=PublishedAt(published_at),
+                        duration_seconds=DurationSeconds(duration_seconds)
                     )
                 )
             
@@ -94,9 +100,6 @@ class YtDlpExtractorAdapter(MediaExtractorPort):
 
     def extract_audio(self, episode: MediaEpisode) -> tuple[Path, str, int]:
         """Downloads and extracts the audio channel from the target media episode.
-
-        Fetches the raw media from the external source, post-processes it into the
-        standard internal audio format (MP3) at a constant bitrate, and tracks file metrics.
 
         Args:
             episode: The MediaEpisode entity containing the external ID of the target content.
@@ -106,17 +109,10 @@ class YtDlpExtractorAdapter(MediaExtractorPort):
                 - Path: The absolute local Path to the extracted audio file.
                 - str: The encoding format identifier (always "mp3").
                 - int: The size of the extracted file in bytes.
-
-        Raises:
-            FileNotFoundError: If the downloaded file is missing on the filesystem after
-                yt-dlp execution completes.
         """
-        # Infrastructure limit: Save raw media files using a predictable name template bound to the
-        # unique external ID to ensure download idempotency and avoid duplicate file downloads.
-        output_template = str(self.download_dir / f"{episode.external_id}.%(ext)s")
+        ext_id_str = episode.external_id.value
+        output_template = str(self.download_dir / f"{ext_id_str}.%(ext)s")
         
-        # Infrastructure limit: FFmpeg is forced to extract audio and transcode it to MP3 at 192kbps.
-        # This standardizes input codecs for downstream Whisper transcription while managing local disk saturation.
         ydl_opts = {
             "format": "bestaudio/best",
             "outtmpl": output_template,
@@ -131,12 +127,10 @@ class YtDlpExtractorAdapter(MediaExtractorPort):
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            watch_url = f"https://www.youtube.com/watch?v={episode.external_id}"
+            watch_url = f"https://www.youtube.com/watch?v={ext_id_str}"
             ydl.download([watch_url])
         
-        # Exception handling: Ensure the file was generated and is accessible on disk.
-        # Downstream Whisper transcription depends on the local existence of the audio artifact.
-        target_path = self.download_dir / f"{episode.external_id}.mp3"
+        target_path = self.download_dir / f"{ext_id_str}.mp3"
         if not target_path.exists():
             raise FileNotFoundError(f"Extracted audio file not found at {target_path}")
         

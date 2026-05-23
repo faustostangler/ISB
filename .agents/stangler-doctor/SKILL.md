@@ -1,9 +1,9 @@
 ---
-name: doctor-stangler
+name: stangler-doctor
 description: >
   Enforces the Doctor Stangler Architecture Method — the mandatory coding methodology for this workspace.
-  Coordinates the multi-agent committee via its sub-skills located under agents/:
-  angiography, stereoscopy, refractometry, surgery, and treatment.
+  Coordinates the multi-agent committee via its sub-skills located under the same .agents/ directory:
+  stangler-angiography, stangler-stereoscopy, stangler-refractometry, stangler-surgery, and stangler-treatment.
   ADR-first: every coding task begins with an Architectural Decision Record. Specs are
   consequences of the ADR. Implementation plans are consequences of specs. No implementation
   plan without specs. No specs without ADR. Governs architecture (DDD, Hexagonal/Clean
@@ -37,11 +37,11 @@ To ensure absolute precision, the Doctor Stangler Method is executed by a commit
 
 | Phase | Agent Role | Folder / Skill | Trigger/Focus |
 |-------|------------|----------------|---------------|
-| **Phase 0** | **Angiography** | `agents/angiography.md` | Code archaeology, reverse-engineering (`reversa`), mapping legacy systems |
-| **Phase 1** | **Stereoscopy** | `agents/stereoscopy.md` | Strategic vision, writing ADRs, glossary creation, cross-context state |
-| **Phase 2** | **Refractometry** | `agents/refractometry.md` | Precision test specifications, boundary conditions, invariant tests |
-| **Phase 3** | **Surgery** | `agents/surgery.md` | Surgical TDD implementation, failing tests, minimum code to pass, refactoring |
-| **Phase 4** | **Treatment** | `agents/treatment.md` | Post-op quality checks, mutation testing (`mutmut`), static types, linting |
+| **Phase 0** | **Angiography** | `../stangler-angiography/SKILL.md` | Code archaeology, reverse-engineering (`reversa`), mapping legacy systems |
+| **Phase 1** | **Stereoscopy** | `../stangler-stereoscopy/SKILL.md` | Strategic vision, writing ADRs, glossary creation, cross-context state |
+| **Phase 2** | **Refractometry** | `../stangler-refractometry/SKILL.md` | Precision test specifications, boundary conditions, invariant tests |
+| **Phase 3** | **Surgery** | `../stangler-surgery/SKILL.md` | Surgical TDD implementation, failing tests, minimum code to pass, refactoring |
+| **Phase 4** | **Treatment** | `../stangler-treatment/SKILL.md` | Post-op quality checks, mutation testing (`mutmut`), static types, linting |
 
 ---
 

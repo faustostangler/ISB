@@ -1,5 +1,5 @@
 ---
-name: doctor-stangler-angiography
+name: stangler-angiography
 description: >
   Phase 0: Angiography (Legacy Archaeology & Reverse Engineering).
   This skill triggers on tasks involving legacy code, reverse engineering,
@@ -57,7 +57,7 @@ This discovery file becomes the **immutable input** for Phase 1 (Stereoscopy).
 ## 3. Reference and Decision Checklist
 
 ### References
-- Refer to the shared [legacy_strangling_patterns.md](../references/legacy_strangling_patterns.md) for detailed ACL construction directives, mappers, and adapters.
+- Refer to the shared [legacy_strangling_patterns.md](../stangler-doctor/references/legacy_strangling_patterns.md) for detailed ACL construction directives, mappers, and adapters.
 
 ### Checklist
 - [ ] Has the legacy code boundary been mapped and documented?

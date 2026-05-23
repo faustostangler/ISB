@@ -3,6 +3,7 @@ from pathlib import Path
 from isb.shared_kernel.types import ContentId, ProcessingStatus
 from isb.shared_kernel.events import EventBus, TranscriptionCompleted
 from isb.transcription.domain.entities import Transcript
+from isb.transcription.domain.value_objects import LanguageCode
 from isb.transcription.application.ports import TranscriberPort, TranscriptionManifestPort
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,12 @@ class TranscribeAudioUseCase:
         self.manifest = manifest_port
         self.event_bus = event_bus
 
-    def execute(self, content_id: ContentId, audio_path: Path, language_hint: str | None = None) -> Transcript:
+    def execute(
+        self,
+        content_id: ContentId,
+        audio_path: Path,
+        language_hint: LanguageCode | None = None
+    ) -> Transcript:
         """Transcribe audio track via Whisper, mark manifest, and emit completion event.
 
         Args:
@@ -69,12 +75,14 @@ class TranscribeAudioUseCase:
                 content_id=content_id,
                 transcript_path=transcript_path,
                 metadata={
-                    "language": transcript.language,
-                    "model": transcript.model,
+                    "language": str(transcript.language),
+                    "model": str(transcript.model),
                     "duration_seconds": transcript.duration_seconds,
                     "word_count": transcript.word_count(),
                 }
             )
+            if hasattr(self.manifest, "save_event"):
+                self.manifest.save_event(event)
             self.event_bus.publish(event)
             
             # Step 7: Log final output summary and return the domain entity
