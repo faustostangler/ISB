@@ -1,15 +1,21 @@
 import uuid
+import logging
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Type, TypeVar
 from dataclasses import dataclass, field
+from pydantic import BaseModel, Field, field_validator
+
 from isb.shared_kernel.types import ContentId
+from isb.shared_kernel.executor import TaskExecutor
+
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
 class DomainEvent:
     """Base record for all domain events emitted by the system contexts.
-
+    
     All subclasses inherit these properties to preserve auditability and tracing.
     Domain events represent significant state transitions within a Bounded Context.
     """
@@ -21,29 +27,54 @@ class DomainEvent:
 @dataclass(frozen=True, kw_only=True)
 class AudioExtracted(DomainEvent):
     """Emitted when the Ingestion context has extracted the audio for an episode.
-
+    
     Signals to downstream listeners (such as the Transcription context) that
-    a local audio file is ready for speech-to-text processing.
+    a local/remote audio resource is ready for speech-to-text processing.
     """
-    audio_path: Path
+    audio_ref: str
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Step 1: Enforce strict URI schema validation (Option B)
+        # We must verify that the audio_ref string is a valid URI starting with file://, s3://, or https://
+        raise NotImplementedError("AudioExtracted.__post_init__ skeleton stub")
+
+
+class SegmentPayload(BaseModel):
+    """Pydantic model representing a single segment inside the transcript payload."""
+    start_seconds: float
+    end_seconds: float
+    text: str
+    confidence: float
+
+    # Enforce segment invariants (start_seconds <= end_seconds, confidence in [0.0, 1.0])
+    # Raise ValueError if violated.
+
+
+class TranscriptPayload(BaseModel):
+    """Pydantic model representing the inline transcript payload data (Option B)."""
+    full_text: str = Field(..., min_length=1)
+    language: str = Field(..., min_length=2, max_length=5)
+    model: str = Field(..., min_length=1)
+    duration_seconds: float = Field(..., ge=0.0)
+    segments: list[SegmentPayload] = Field(default_factory=list)
 
 
 @dataclass(frozen=True, kw_only=True)
 class TranscriptionCompleted(DomainEvent):
     """Emitted when the Transcription context completes speech-to-text processing.
-
+    
     Signals to downstream listeners (such as the Knowledge context) that
-    the verbatim transcription JSON is available for second brain note synthesis.
+    the verbatim transcription data is available inline for second brain note synthesis.
     """
-    transcript_path: Path
+    transcript_payload: TranscriptPayload
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, kw_only=True)
 class KnowledgeSynthesized(DomainEvent):
     """Emitted when the Knowledge context completes raw note extraction and wiki synthesis.
-
+    
     Indicates the final step of the pipeline where both raw transcription notes
     and synthesized wiki articles have been committed to the Obsidian Vault.
     """
@@ -51,66 +82,55 @@ class KnowledgeSynthesized(DomainEvent):
     wiki_articles_updated: list[Path] = field(default_factory=list)
 
 
-
 T = TypeVar("T", bound=DomainEvent)
 Handler = Callable[[Any], None]
 
 
 class EventBus:
-    """Thread-safe, in-memory publish-subscriber event bus.
-
+    """Thread-safe, asynchronous publish-subscriber event bus.
+    
     Used for decoupling contexts in the modular monolith. It coordinates workflow
-    flows across context boundaries without introducing tight physical coupling.
+    flows across context boundaries asynchronously using an injected TaskExecutor.
     """
-    def __init__(self) -> None:
-        """Initialize the event handlers registry and thread lock mechanism."""
-        # Step 1: Initialize in-memory dictionary mapping event types to active handlers
-        self._handlers: dict[Type[DomainEvent], list[Handler]] = {}
-        # Step 2: Initialize thread Lock to secure handler modification and dispatching
-        # We do this because the pipeline might process multiple events concurrently
-        self._lock = threading.Lock()
+    def __init__(self, executor: TaskExecutor) -> None:
+        """Initialize the event handlers registry and task executor adapter.
+        
+        Args:
+            executor: The TaskExecutor instance to handle background jobs.
+        """
+        # Step 1: Save the injected TaskExecutor interface
+        # Step 2: Initialize thread Lock and handlers dict
+        raise NotImplementedError("EventBus.__init__ skeleton stub")
 
     def subscribe(self, event_type: Type[T], handler: Callable[[T], None]) -> None:
         """Subscribe a handler callback to a specific type of domain event.
-
+        
         Args:
             event_type: The DomainEvent subclass to listen for.
             handler: A callback function invoked when the event is published.
         """
-        # Step 1: Acquire lock to ensure thread-safe modification of handlers registry
-        with self._lock:
-            # Step 2: Initialize handler list if it's the first subscription for this event type
-            if event_type not in self._handlers:
-                self._handlers[event_type] = []
-            # Step 3: Append handler callback to list
-            self._handlers[event_type].append(handler)
+        # Step 1: Thread-safe register of the handler callback
+        raise NotImplementedError("EventBus.subscribe skeleton stub")
 
     def publish(self, event: DomainEvent) -> None:
-        """Publish a domain event to all subscribed handlers.
-
-        Invocations are run sequentially in the caller thread to preserve ordering
-        and simple transaction/worker boundaries.
-
+        """Publish a domain event to all subscribed handlers asynchronously.
+        
+        Submits each handler execution task to the injected TaskExecutor.
+        
         Args:
             event: The DomainEvent instance being dispatched.
         """
-        # Step 1: Resolve the concrete type of the incoming event
-        event_type = type(event)
-        handlers_to_call = []
-        
-        # Step 2: Lock registry to safely extract handlers without concurrent modification conflicts
-        with self._lock:
-            # Step 3: Match exact event type subscribers and add them to execution queue
-            if event_type in self._handlers:
-                handlers_to_call.extend(self._handlers[event_type])
-                
-            # Step 4: Identify and include parent class handlers (polymorphic dispatching support)
-            # This allows subscribing to the base DomainEvent to track system-wide events
-            for registered_type, handlers in self._handlers.items():
-                if registered_type != event_type and issubclass(event_type, registered_type):
-                    handlers_to_call.extend(handlers)
+        # Step 1: Resolve matching handlers (including polymorphic matching)
+        # Step 2: For each handler, submit a wrapped safe call to the executor
+        raise NotImplementedError("EventBus.publish skeleton stub")
 
-        # Step 5: Execute handlers sequentially in the current thread context
-        # We run this synchronously to avoid thread scheduling delays and to keep the pipeline simple
-        for handler in handlers_to_call:
-            handler(event)
+    def _safe_execute(self, handler: Handler, event: DomainEvent) -> None:
+        """Execute a single handler safely, capturing and isolating any exception.
+        
+        Args:
+            handler: The subscriber callback.
+            event: The DomainEvent to pass.
+        """
+        # Step 1: Run the handler callback in a try-except block
+        # Step 2: Log any exception and report to Sentry if initialized
+        raise NotImplementedError("EventBus._safe_execute skeleton stub")
